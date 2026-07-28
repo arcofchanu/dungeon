@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { allNotes } from '../lib/notes';
+
+const recent = (await allNotes()).slice(0, 3);
+---
+
+<BaseLayout
+  title="Not found"
+  description="That page does not exist in this archive."
+  path="/404/"
+>
+  <div class="wrap notfound">
+    <p class="notfound-code mono">404</p>
+    <h1>Nothing filed here</h1>
+    <p class="notfound-body">
+      That path does not exist in the archive. It may have been renamed, or it may
+      be a note marked private — those are absent from the build entirely, not
+      hidden.
+    </p>
+
+    <p class="notfound-body">
+      Try <button type="button" class="inline-trigger" data-search-open>search</button> or
+      <a href="/">the index</a>.
+    </p>
+
+    <h2 class="notfound-recent mono">Most recent</h2>
+    <ul class="notfound-list">
+      {recent.map((note) => <li><a href={`/notes/${note.slug}/`}>{note.title}</a></li>)}
+    </ul>
+  </div>
+</BaseLayout>
+
+<style>
+  .notfound {
+    padding-block: var(--space-6);
+    max-width: var(--measure);
+  }
+
+  .notfound-code {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.2em;
+    color: var(--dusk);
+    margin: 0 0 var(--space-2);
+  }
+
+  .notfound-body {
+    color: var(--dusk);
+  }
+
+  .inline-trigger {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--blossom);
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+  }
+
+  .notfound-recent {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--dusk);
+    margin-top: var(--space-5);
+  }
+
+  .notfound-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+</style>

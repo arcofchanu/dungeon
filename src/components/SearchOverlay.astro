@@ -1,0 +1,247 @@
+---
+// Full-screen search (§8). Search is the most important feature on the site —
+// it is server-rendered inert markup, hydrated by src/scripts/search.ts, and
+// degrades to "closed" if that never loads.
+const placeholder = 'Search the archive';
+---
+
+<div class="search" data-search hidden>
+  <div class="search-backdrop" data-search-dismiss></div>
+
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="Search notes">
+    <div class="search-field">
+      <svg class="search-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+        <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"></circle>
+        <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+        ></path>
+      </svg>
+
+      <input
+        type="search"
+        class="search-input"
+        data-search-input
+        aria-label="Search notes"
+        aria-controls="search-results"
+        aria-autocomplete="list"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+
+      {/* Animated placeholder — the input's own is left empty so SplitText can
+          stagger these characters (§8). aria-hidden: the input is labelled. */}
+      <span class="search-placeholder" data-search-placeholder aria-hidden="true">
+        {placeholder}
+      </span>
+
+      <button type="button" class="search-close mono" data-search-dismiss>Esc</button>
+    </div>
+
+    <div class="search-filters" data-search-filters hidden></div>
+
+    <p class="search-status mono" data-search-status role="status" aria-live="polite"></p>
+
+    <ul class="search-results" id="search-results" data-search-results role="listbox" aria-label="Results"></ul>
+  </div>
+</div>
+
+<style>
+  .search[hidden] {
+    display: none;
+  }
+
+  .search {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .search-backdrop {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, var(--yozakura) 88%, transparent);
+  }
+
+  .search-panel {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    background: var(--yozakura);
+    padding: max(var(--space-3), env(safe-area-inset-top)) var(--space-3)
+      calc(var(--space-3) + env(safe-area-inset-bottom));
+  }
+
+  .search-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    border-bottom: var(--hairline) solid var(--branch);
+    padding-bottom: var(--space-2);
+    flex: 0 0 auto;
+  }
+
+  .search-icon {
+    color: var(--dusk);
+    flex: 0 0 auto;
+  }
+
+  .search-input {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    color: var(--petal);
+    font-family: var(--font-body);
+    font-size: var(--step-1);
+    line-height: 1.4;
+    padding: var(--space-1) 0;
+    outline: none;
+  }
+
+  .search-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .search-placeholder {
+    position: absolute;
+    left: calc(16px + var(--space-2));
+    top: 50%;
+    translate: 0 -50%;
+    margin-top: -0.1em;
+    color: var(--dusk);
+    font-family: var(--font-body);
+    font-size: var(--step-1);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .search.is-typing .search-placeholder {
+    display: none;
+  }
+
+  .ph-char {
+    display: inline-block;
+  }
+
+  .search-close {
+    flex: 0 0 auto;
+    background: none;
+    border: var(--hairline) solid var(--branch);
+    border-radius: 2px;
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    padding: 0.2rem 0.45rem;
+    cursor: pointer;
+  }
+
+  .search-close:hover {
+    color: var(--blossom);
+    border-color: var(--stem);
+  }
+
+  .search-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding: var(--space-2) 0 0;
+    flex: 0 0 auto;
+  }
+
+  .search-status {
+    margin: var(--space-2) 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+    flex: 0 0 auto;
+  }
+
+  .search-results {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  @media (min-width: 48rem) {
+    .search-panel {
+      flex: 0 1 auto;
+      width: min(46rem, 100%);
+      margin: 6vh auto 0;
+      max-height: 80dvh;
+      border: var(--hairline) solid var(--branch);
+      border-radius: 6px; /* permitted on the search overlay (§7.7) */
+      padding: var(--space-4);
+    }
+  }
+</style>
+
+<style is:global>
+  /* Result rows are built by src/scripts/search.ts, so their styles are global. */
+  .result {
+    border-bottom: var(--hairline) solid var(--branch);
+  }
+
+  .result:last-child {
+    border-bottom: none;
+  }
+
+  .result-link {
+    display: block;
+    padding: var(--space-3) var(--space-2);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .result-meta {
+    margin: 0 0 0.15rem;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .result-title {
+    margin: 0 0 0.2rem;
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 560;
+    font-variation-settings:
+      'SOFT' var(--fraunces-soft),
+      'WONK' var(--fraunces-wonk),
+      'opsz' 30;
+    color: var(--petal);
+    line-height: var(--leading-tight);
+  }
+
+  .result-excerpt {
+    margin: 0;
+    color: var(--dusk);
+    font-size: var(--step-0);
+  }
+
+  .result-excerpt mark {
+    background: none;
+    color: var(--blossom);
+    font-weight: 600;
+  }
+
+  .result.is-active .result-link,
+  .result-link:hover {
+    background: var(--bark);
+  }
+
+  .result.is-active .result-title,
+  .result-link:hover .result-title {
+    color: var(--blossom);
+  }
+</style>

@@ -1,0 +1,93 @@
+---
+import type { Note } from '../lib/notes';
+import { formatDate } from '../lib/notes';
+import Redacted from './Redacted.astro';
+
+interface Props {
+  note: Note;
+}
+
+const { note } = Astro.props;
+
+// Mono metadata line: date · lead technique (the mockup in §7.4).
+const lead = note.tags.find((t) => t.namespace === 'type') ?? note.tags[0];
+const tagList = note.tags.map((t) => t.raw).join(' ');
+---
+
+<article class="row" data-note data-tags={tagList} data-date={formatDate(note.date)}>
+  <p class="row-meta mono">
+    <time datetime={note.date.toISOString()}>{formatDate(note.date)}</time>
+    <span aria-hidden="true"> · </span>
+    <span class="row-lead">{lead.value}</span>
+    {note.draft && <span class="row-draft">draft</span>}
+  </p>
+
+  <h2 class="row-title">
+    <a href={`/notes/${note.slug}/`}>{note.title}</a>
+  </h2>
+
+  <p class="row-summary">
+    <Redacted text={note.summary} phrases={note.redact} />
+  </p>
+</article>
+
+<style>
+  /*
+   * No cards, no borders, no shadows (§7.4). One hairline between rows and
+   * nothing else. Hover changes colour only — no transform (§7.7).
+   */
+  .row {
+    padding: var(--space-4) 0;
+    border-bottom: var(--hairline) solid var(--branch);
+  }
+
+  .row-meta {
+    margin: 0 0 var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* --stem is a border colour in §7.2; as 13.6px text it sits at 2.6:1. The
+     lead technique is a tag, and --blossom is the tag colour — 7.9:1. */
+  .row-lead {
+    color: var(--blossom);
+  }
+
+  /* Severity chip rather than --fallen text: 2.8:1 as text, 5.0:1 inverted. */
+  .row-draft {
+    margin-left: var(--space-2);
+    color: var(--petal);
+    background: var(--fallen);
+    padding: 0 0.35em;
+  }
+
+  .row-title {
+    font-size: var(--step-2);
+    margin: 0 0 var(--space-2);
+  }
+
+  .row-title a {
+    color: var(--petal);
+    text-decoration: none;
+  }
+
+  .row:hover .row-title a,
+  .row-title a:hover {
+    color: var(--blossom);
+  }
+
+  .row-summary {
+    margin: 0;
+    color: var(--dusk);
+    max-width: var(--measure);
+  }
+
+  @media (min-width: 60rem) {
+    .row-title {
+      font-size: var(--step-3);
+    }
+  }
+</style>

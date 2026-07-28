@@ -1,0 +1,227 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+const nodes = headings.filter((h) => h.depth === 2);
+const last = Math.max(nodes.length - 1, 1);
+---
+
+{
+  nodes.length > 0 && (
+    <nav class="branch" data-branch aria-label="Sections">
+      {/* One petal path, instantiated five times per bud (§7.5A). */}
+      <svg class="branch-defs" aria-hidden="true" focusable="false">
+        <defs>
+          <path
+            id="yz-petal"
+            d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z"
+          />
+        </defs>
+      </svg>
+
+      <span class="branch-line" aria-hidden="true" />
+      <span class="branch-fill" data-branch-fill aria-hidden="true" />
+
+      <ol class="branch-buds">
+        {nodes.map((node, index) => (
+          <li class="branch-node" style={`--pos:${index / last}`}>
+            <a class="bud" href={`#${node.slug}`} data-bud data-target={node.slug}>
+              <svg
+                class="bud-svg"
+                viewBox="-14 -14 28 28"
+                width="26"
+                height="26"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <circle class="bud-core" r="1.5" />
+                <g class="bud-petals">
+                  <g transform="rotate(0)">
+                    <use href="#yz-petal" />
+                  </g>
+                  <g transform="rotate(72)">
+                    <use href="#yz-petal" />
+                  </g>
+                  <g transform="rotate(144)">
+                    <use href="#yz-petal" />
+                  </g>
+                  <g transform="rotate(216)">
+                    <use href="#yz-petal" />
+                  </g>
+                  <g transform="rotate(288)">
+                    <use href="#yz-petal" />
+                  </g>
+                </g>
+                <circle class="bud-centre" r="1.4" />
+              </svg>
+              <span class="visually-hidden">{node.text}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  )
+}
+
+<style>
+  /*
+   * The branch is reading progress and table of contents at once (§7.5A), so
+   * it is a real <nav> with real links — the animation decorates a control
+   * that works without it.
+   */
+  .branch {
+    position: fixed;
+    left: max(var(--space-1), env(safe-area-inset-left));
+    top: 5rem;
+    bottom: var(--space-5);
+    width: 26px;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .branch-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  /* Mobile: a 3px rail. Five-petal glyphs at 375px are mush (§7.8). */
+  .branch-line,
+  .branch-fill {
+    position: absolute;
+    left: 50%;
+    translate: -50% 0;
+    width: 3px;
+    top: 0;
+    border-radius: 0;
+  }
+
+  .branch-line {
+    bottom: 0;
+    background: var(--branch);
+  }
+
+  .branch-fill {
+    height: var(--progress, 0%);
+    background: var(--stem);
+  }
+
+  .branch-buds {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    inset: 0;
+  }
+
+  .branch-node {
+    position: absolute;
+    top: calc(var(--pos) * 100%);
+    left: 50%;
+    translate: -50% -50%;
+    /* Mobile shows a single blossom at the current position only (§7.8). */
+    display: none;
+  }
+
+  .branch-node.is-current {
+    display: block;
+  }
+
+  .bud {
+    display: block;
+    pointer-events: auto;
+    line-height: 0;
+    padding: 2px;
+  }
+
+  .bud-svg {
+    overflow: visible;
+  }
+
+  .bud-core {
+    fill: var(--branch);
+  }
+
+  /*
+   * Static end state, and the no-JS state: open, --stem, 0.62 scale. The site
+   * looks finished while completely still (Phase 2). Once JS is ready the rail
+   * gets .js-ready and buds start closed so they can bloom on scroll.
+   */
+  .bud-petals use {
+    fill: var(--stem);
+    transform: scale(var(--bloom, 0.62));
+    transform-origin: 0 0;
+    transform-box: view-box;
+  }
+
+  .bud-centre {
+    fill: var(--petal);
+    opacity: var(--bloom, 0.62);
+  }
+
+  .branch.js-ready .bud-petals use,
+  .branch.js-ready .bud-centre {
+    --bloom: 0;
+  }
+
+  .branch-node.is-passed .bud-petals use {
+    --bloom: 0.62;
+    fill: var(--stem);
+  }
+
+  .branch-node.is-passed .bud-centre {
+    --bloom: 0.62;
+  }
+
+  /* Current section sits at full scale and full --blossom (§7.5A). */
+  .branch-node.is-current .bud-petals use {
+    --bloom: 1;
+    fill: var(--blossom);
+  }
+
+  .branch-node.is-current .bud-centre {
+    --bloom: 1;
+  }
+
+  .branch-node.is-current .bud-core {
+    fill: var(--blossom);
+  }
+
+  .bud:hover .bud-petals use {
+    fill: var(--blossom);
+  }
+
+  @media (min-width: 60rem) {
+    .branch {
+      position: sticky;
+      top: 6rem;
+      left: auto;
+      bottom: auto;
+      height: calc(100dvh - 9rem);
+      width: 26px;
+      align-self: start;
+    }
+
+    .branch-line,
+    .branch-fill {
+      width: var(--hairline);
+    }
+
+    /* Desktop: every bud is visible, and the set of them is the contents. */
+    .branch-node {
+      display: block;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    /* Blossoms render at full scale immediately, no stagger (§7.8). */
+    .branch.js-ready .bud-petals use,
+    .branch.js-ready .bud-centre {
+      --bloom: 0.62;
+    }
+  }
+</style>

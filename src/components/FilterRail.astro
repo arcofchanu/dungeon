@@ -1,0 +1,215 @@
+---
+import type { TagGroup } from '../lib/notes';
+
+interface Props {
+  groups: TagGroup[];
+  total: number;
+}
+
+const { groups, total } = Astro.props;
+---
+
+<aside class="rail" data-filter-rail aria-label="Filters">
+  <div class="rail-panel" data-filter-panel>
+    <div class="rail-head">
+      <p class="rail-title mono">Filters</p>
+      <button type="button" class="rail-close mono" data-filter-close aria-label="Close filters">
+        Close
+      </button>
+    </div>
+
+    <p class="rail-count mono" data-filter-count aria-live="polite">{total} notes</p>
+
+    {
+      groups.map((group) => (
+        <section class="rail-group">
+          <h2 class="rail-group-title mono">{group.label}</h2>
+          <ul class="rail-list">
+            {group.tags.map((tag) => (
+              <li>
+                <button
+                  type="button"
+                  class="tag"
+                  data-filter-tag={tag.raw}
+                  aria-pressed="false"
+                >
+                  <span class="tag-value">{tag.value}</span>
+                  <span class="tag-count">{tag.count}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+
+    <button type="button" class="rail-clear mono" data-filter-clear hidden>Clear all</button>
+  </div>
+</aside>
+
+<style>
+  /*
+   * Mobile: a sheet behind a trigger button. Desktop: a persistent column
+   * (§7.4). Soft corners are permitted here and on the search overlay only
+   * (§7.7).
+   */
+  .rail {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: none;
+    background: color-mix(in srgb, var(--yozakura) 82%, transparent);
+  }
+
+  .rail.is-open {
+    display: block;
+  }
+
+  .rail-panel {
+    position: absolute;
+    inset: auto 0 0 0;
+    max-height: 82dvh;
+    overflow-y: auto;
+    background: var(--bark);
+    border-top: var(--hairline) solid var(--branch);
+    border-radius: 8px 8px 0 0;
+    padding: var(--space-4) var(--space-3) calc(var(--space-5) + env(safe-area-inset-bottom));
+  }
+
+  .rail-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: var(--space-2);
+  }
+
+  .rail-title {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--petal);
+  }
+
+  .rail-close {
+    background: none;
+    border: none;
+    color: var(--blossom);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    cursor: pointer;
+    padding: var(--space-1);
+  }
+
+  .rail-count {
+    margin: 0 0 var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+  }
+
+  .rail-group {
+    margin-bottom: var(--space-4);
+  }
+
+  .rail-group-title {
+    margin: 0 0 var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--dusk);
+  }
+
+  .rail-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.4em;
+    background: none;
+    border: var(--hairline) solid var(--stem);
+    border-radius: 2px;
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .tag:hover {
+    color: var(--blossom);
+    border-color: var(--blossom);
+  }
+
+  .tag[aria-pressed='true'] {
+    color: var(--yozakura);
+    background: var(--blossom);
+    border-color: var(--blossom);
+  }
+
+  .tag-count {
+    font-size: 0.72em;
+    opacity: 0.7;
+  }
+
+  .rail-clear {
+    background: none;
+    border: var(--hairline) solid var(--branch);
+    border-radius: 2px;
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+  }
+
+  .rail-clear:hover {
+    color: var(--blossom);
+    border-color: var(--stem);
+  }
+
+  /* Desktop: persistent column, no overlay, no close button. */
+  @media (min-width: 60rem) {
+    .rail {
+      position: sticky;
+      top: 4rem;
+      inset: auto;
+      display: block;
+      background: none;
+      align-self: start;
+      max-height: calc(100dvh - 5rem);
+      overflow-y: auto;
+    }
+
+    .rail-panel {
+      position: static;
+      max-height: none;
+      overflow: visible;
+      background: none;
+      border: none;
+      border-radius: 0;
+      padding: 0 var(--space-4) var(--space-4) 0;
+    }
+
+    .rail-close {
+      display: none;
+    }
+
+    /* The index bar carries the live count next to the list on desktop;
+       showing it here too just says the same number twice. */
+    .rail-count {
+      display: none;
+    }
+  }
+</style>

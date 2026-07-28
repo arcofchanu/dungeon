@@ -1,0 +1,280 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Branch from '../../components/Branch.astro';
+import { allNotes, backlinkMap, formatDate, NAMESPACES } from '../../lib/notes';
+import type { Note } from '../../lib/notes';
+
+export async function getStaticPaths() {
+  const notes = await allNotes();
+  const backlinks = await backlinkMap();
+  return notes.map((note) => ({
+    params: { slug: note.slug },
+    props: { note, backlinks: backlinks.get(note.slug) ?? [] },
+  }));
+}
+
+interface Props {
+  note: Note;
+  backlinks: { slug: string; title: string }[];
+}
+
+const { note, backlinks } = Astro.props;
+const { Content, headings } = await render(note.entry);
+
+// Metadata block beneath the title, grouped by namespace (§7.4).
+const metaGroups = NAMESPACES.map(({ key, label }) => ({
+  label,
+  tags: note.tags.filter((t) => t.namespace === key),
+})).filter((g) => g.tags.length > 0);
+
+const freeTags = note.tags.filter((t) => t.namespace === null);
+---
+
+<BaseLayout title={note.title} description={note.summary} path={`/notes/${note.slug}/`}>
+  <div class="wrap note-wrap">
+    <Branch headings={headings} />
+
+    <article class="note" data-pagefind-body data-note-article>
+      <header class="note-head">
+        {note.draft && <p class="note-draft mono">Draft — excluded from production</p>}
+
+        <h1 class="note-title">{note.title}</h1>
+
+        {/* Ignored by Pagefind: this block is the same data the filters and
+            meta already carry, and indexing it drags "Date2026-07-28.
+            Techniqueindirect-injection…" into every excerpt. */}
+        <dl class="note-meta mono" data-pagefind-ignore>
+          <div class="meta-pair">
+            <dt>Date</dt>
+            <dd>
+              <time datetime={note.date.toISOString()}>{formatDate(note.date)}</time>
+              {
+                note.updated && (
+                  <>
+                    <span class="meta-sep" aria-hidden="true">
+                      /
+                    </span>
+                    <span class="meta-updated">
+                      upd <time datetime={note.updated.toISOString()}>{formatDate(note.updated)}</time>
+                    </span>
+                  </>
+                )
+              }
+            </dd>
+          </div>
+
+          {
+            metaGroups.map((group) => (
+              <div class="meta-pair">
+                <dt>{group.label}</dt>
+                <dd>
+                  {group.tags.map((tag) => (
+                    <a class="meta-tag" href={`/?tag=${encodeURIComponent(tag.raw)}`}>
+                      {tag.value}
+                    </a>
+                  ))}
+                </dd>
+              </div>
+            ))
+          }
+
+          {
+            freeTags.length > 0 && (
+              <div class="meta-pair">
+                <dt>Tags</dt>
+                <dd>
+                  {freeTags.map((tag) => (
+                    <a class="meta-tag" href={`/?tag=${encodeURIComponent(tag.raw)}`}>
+                      {tag.value}
+                    </a>
+                  ))}
+                </dd>
+              </div>
+            )
+          }
+
+          <div class="meta-pair">
+            <dt>Length</dt>
+            <dd>{note.readingMinutes} min · {note.wordCount} words</dd>
+          </div>
+        </dl>
+
+        {/* Pagefind filter surface — the rail and search share one taxonomy (§8). */}
+        <div class="visually-hidden" aria-hidden="true">
+          {note.tags.map((tag) => {
+            const group = NAMESPACES.find((n) => n.key === tag.namespace);
+            return <span data-pagefind-filter={`${group ? group.label : 'Tags'}:${tag.value}`} />;
+          })}
+          <span data-pagefind-meta={`date:${formatDate(note.date)}`}></span>
+          <span data-pagefind-meta={`reading:${note.readingMinutes} min`}></span>
+        </div>
+      </header>
+
+      <div class="prose" data-prose>
+        <Content />
+      </div>
+
+      {
+        backlinks.length > 0 && (
+          <footer class="backlinks" data-pagefind-ignore>
+            <h2 class="backlinks-title mono">Linked from</h2>
+            <ul class="backlinks-list">
+              {backlinks.map((link) => (
+                <li>
+                  <a href={`/notes/${link.slug}/`}>{link.title}</a>
+                </li>
+              ))}
+            </ul>
+          </footer>
+        )
+      }
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .note-wrap {
+    padding-block: var(--space-5) var(--space-6);
+  }
+
+  .note {
+    max-width: var(--measure);
+  }
+
+  .note-draft {
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--petal);
+    background: var(--fallen);
+    display: inline-block;
+    padding: 0.15em 0.5em;
+    margin: 0 0 var(--space-3);
+  }
+
+  .note-title {
+    font-size: var(--step-3);
+    margin-bottom: var(--space-4);
+  }
+
+  .note-meta {
+    margin: 0 0 var(--space-5);
+    padding-bottom: var(--space-4);
+    border-bottom: var(--hairline) solid var(--branch);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1.6;
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .meta-pair {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+
+  .note-meta dt {
+    color: var(--dusk);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.72rem;
+    padding-top: 0.15em;
+  }
+
+  .note-meta dd {
+    margin: 0;
+    color: var(--petal);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.5rem;
+  }
+
+  .meta-sep {
+    color: var(--branch);
+    margin-inline: 0.35em;
+  }
+
+  .meta-updated {
+    color: var(--dusk);
+  }
+
+  .meta-tag {
+    color: var(--dusk);
+    text-decoration: none;
+    border-bottom: var(--hairline) solid transparent;
+  }
+
+  .meta-tag:hover {
+    color: var(--blossom);
+    border-bottom-color: var(--blossom);
+  }
+
+  .backlinks {
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: var(--hairline) solid var(--branch);
+  }
+
+  .backlinks-title {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--dusk);
+    margin-bottom: var(--space-2);
+  }
+
+  .backlinks-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  @media (min-width: 60rem) {
+    .note-wrap {
+      display: grid;
+      /* Column 2 is capped at the measure so the branch+prose pair centres as
+         a unit — with `1fr` the prose hugged the left and left a dead gutter. */
+      grid-template-columns: 3.5rem minmax(0, var(--measure));
+      gap: var(--space-4);
+      justify-content: center;
+    }
+
+    .note-title {
+      font-size: var(--step-4);
+    }
+  }
+</style>
+
+<style is:global>
+  /* Prose scoping lives here because <Content /> renders unscoped markup. */
+  .prose > * {
+    max-width: var(--measure);
+  }
+
+  .prose h2 {
+    margin-top: var(--space-5);
+    scroll-margin-top: 5rem;
+  }
+
+  .prose h3 {
+    margin-top: var(--space-4);
+    scroll-margin-top: 5rem;
+  }
+
+  .prose li {
+    margin-bottom: var(--space-1);
+  }
+
+  .prose li::marker {
+    color: var(--stem);
+  }
+
+  .prose pre {
+    max-width: 100%;
+  }
+</style>

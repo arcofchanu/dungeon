@@ -1,0 +1,104 @@
+---
+import '@fontsource-variable/fraunces/full.css';
+import '@fontsource-variable/newsreader/wght.css';
+import '@fontsource-variable/jetbrains-mono/wght.css';
+
+import '../styles/tokens.css';
+import '../styles/global.css';
+import '../styles/content.css';
+
+import SiteHeader from '../components/SiteHeader.astro';
+import SearchOverlay from '../components/SearchOverlay.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  /** Absolute-ish path used for canonical + og:url. */
+  path?: string;
+  /** Note pages opt into the branch/prose grid; the index does not. */
+  bodyClass?: string;
+}
+
+const { title, description, path = Astro.url.pathname, bodyClass = '' } = Astro.props;
+
+const siteName = 'Yozakura';
+const fullTitle = path === '/' ? `${siteName} — red-teaming archive` : `${title} · ${siteName}`;
+const canonical = new URL(path, Astro.site ?? Astro.url).href;
+const ogImage = new URL('/og-default.png', Astro.site ?? Astro.url).href;
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content={path === '/' ? 'website' : 'article'} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#16121C" />
+
+    {/* Theme resolution before first paint — no flash, no layout shift. */}
+    <script is:inline>
+      (() => {
+        try {
+          const stored = localStorage.getItem('yozakura-theme');
+          if (stored === 'light' || stored === 'dark') {
+            document.documentElement.dataset.theme = stored;
+          }
+        } catch {}
+      })();
+    </script>
+  </head>
+
+  <body class={bodyClass}>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <SiteHeader />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p class="mono">
+          Yozakura · a personal research archive · <a href="/">all notes</a>
+        </p>
+      </div>
+    </footer>
+    <SearchOverlay />
+
+    <script>
+      import '../scripts/app.ts';
+    </script>
+
+    <style>
+      main:focus {
+        outline: none;
+      }
+
+      .site-footer {
+        border-top: var(--hairline) solid var(--branch);
+        margin-top: var(--space-6);
+        padding: var(--space-4) 0 var(--space-5);
+      }
+
+      .site-footer p {
+        margin: 0;
+        color: var(--dusk);
+        font-family: var(--font-mono);
+        font-size: var(--step--1);
+      }
+    </style>
+  </body>
+</html>

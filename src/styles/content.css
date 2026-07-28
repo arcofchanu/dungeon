@@ -1,0 +1,88 @@
+/*
+ * Signature elements as static CSS (§7.5). Phase 2 renders them finished but
+ * still — the GSAP layer in Phase 4 only animates the transition into these
+ * end states, so reduced-motion and no-JS both land here correctly.
+ */
+
+/* --- Redaction bars (§7.5B) --- hard-edged, load-bearing brutality. */
+.redaction {
+  position: relative;
+  display: inline;
+  /* Not pre-wrap: a phrase that spans a hard wrap in the source carries a
+     newline, and preserving it forced a visible break mid-sentence. */
+  white-space: normal;
+}
+
+.redaction-text {
+  /* Present in the DOM; the bar covers it until revealed. */
+  color: var(--petal);
+}
+
+.redaction-bar {
+  position: absolute;
+  inset: 0;
+  background: var(--bark);
+  border-radius: 0; /* §7.7 — no exceptions */
+  z-index: 1;
+  /* Static end-state is "covered". JS removes .is-revealed's cover via clip-path. */
+  pointer-events: none;
+}
+
+/* When revealed (JS adds the class, or reduced-motion sets it immediately). */
+.redaction.is-revealed .redaction-bar {
+  clip-path: inset(0 0 0 100%);
+}
+
+/* Single-frame --blossom flash riding the leading edge of the wipe (§7.5B). */
+.redaction-bar.is-wiping {
+  border-right: 2px solid var(--blossom);
+}
+
+/* Reduced motion: fade over 200ms, no wipe (§7.8). */
+.redaction.is-fading .redaction-bar,
+pre[data-fence-redacted].is-fading > .redaction-bar {
+  clip-path: none;
+  opacity: 0;
+  transition: opacity var(--dur-fade) linear;
+}
+
+/* A code fence covered whole (```lang redact). */
+pre[data-fence-redacted] {
+  position: relative;
+}
+
+pre[data-fence-redacted] > .redaction-bar {
+  z-index: 3;
+}
+
+pre[data-fence-redacted].is-revealed > .redaction-bar {
+  clip-path: inset(0 0 0 100%);
+}
+
+/* --- Payload code blocks (§7.6) --- the one place harsh dominates. */
+pre[data-payload] {
+  border-left: 2px solid var(--fallen);
+  position: relative;
+  padding-top: calc(var(--space-3) + 0.9rem);
+}
+
+pre[data-payload]::before {
+  content: 'PAYLOAD';
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  /* --fallen as 10px text is 2.5:1. Inverted into a chip it is 5.0:1 and
+     reads harsher, which is the register §7.6 asks for anyway. */
+  color: var(--petal);
+  background: var(--fallen);
+  padding: 0.2em 0.6em;
+}
+
+/* --- Wikilinks (§6) --- */
+.wikilink {
+  text-decoration-style: dotted;
+  text-decoration-color: color-mix(in srgb, var(--blossom) 60%, transparent);
+}

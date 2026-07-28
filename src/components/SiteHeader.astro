@@ -1,0 +1,127 @@
+---
+// Wordmark, search trigger, theme toggle. No nav — the archive has two routes
+// and the filter rail carries the navigation load.
+---
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="wordmark" href="/">Yozakura</a>
+
+    <div class="header-actions">
+      <button type="button" class="search-trigger" data-search-open aria-keyshortcuts="Meta+K Control+K">
+        <span class="search-trigger-label">Search</span>
+        <kbd class="mono">⌘K</kbd>
+      </button>
+
+      <button
+        type="button"
+        class="theme-toggle"
+        data-theme-toggle
+        aria-label="Toggle light and dark theme"
+      >
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
+          <path
+            d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 1.4v11.2a5.6 5.6 0 0 1 0-11.2Z"
+            fill="currentColor"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: var(--hairline) solid var(--branch);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--yozakura);
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 3.25rem;
+  }
+
+  .wordmark {
+    font-family: var(--font-display);
+    font-size: var(--step-1);
+    font-weight: 600;
+    font-variation-settings:
+      'SOFT' var(--fraunces-soft),
+      'WONK' var(--fraunces-wonk),
+      'opsz' 40;
+    color: var(--petal);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+  }
+
+  .wordmark:hover {
+    color: var(--blossom);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+
+  .search-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: none;
+    border: var(--hairline) solid var(--branch);
+    border-radius: 2px;
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    padding: 0.35rem var(--space-2);
+    cursor: pointer;
+  }
+
+  .search-trigger:hover {
+    color: var(--blossom);
+    border-color: var(--stem);
+  }
+
+  .search-trigger-label {
+    display: none;
+  }
+
+  .search-trigger kbd {
+    font: inherit;
+    color: var(--dusk);
+  }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    background: none;
+    border: var(--hairline) solid transparent;
+    border-radius: 2px;
+    color: var(--dusk);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .theme-toggle:hover {
+    color: var(--blossom);
+  }
+
+  @media (min-width: 40rem) {
+    .search-trigger-label {
+      display: inline;
+    }
+
+    .header-inner {
+      min-height: 4rem;
+    }
+  }
+</style>

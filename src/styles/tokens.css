@@ -1,0 +1,90 @@
+/*
+ * §7.2 colour tokens + §7.3 type scale. Every colour and font size in the
+ * build traces here. If a value is needed that is not here, add it here — do
+ * not inline it (§12).
+ */
+
+:root {
+  /* --- Colour (§7.2) --- */
+  --yozakura: #16121c; /* base ground — plum-black night */
+  --bark: #241c2b; /* raised surfaces, code blocks, redaction bars */
+  --petal: #f2dce4; /* primary text */
+  --dusk: #9b8da6; /* metadata, secondary text, hairlines */
+  --blossom: #e890ac; /* accent — links, tags, active states, focus ring */
+  --fallen: #9e3b5c; /* status and severity ONLY */
+
+  --branch: #3a2e42; /* --bark lightened; unbloomed branch, dividers */
+  --stem: #7a4a5c; /* --fallen desaturated; tag borders, bloomed branch */
+
+  /* --- Type faces (§7.3) --- */
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
+  --font-body: 'Newsreader Variable', 'Newsreader', Georgia, serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
+  /* --- Type scale: 1.25 ratio, body 17px (§7.3) --- */
+  --step--1: 0.8rem; /* 13.6px — mono metadata */
+  --step-0: 1.0625rem; /* 17px  — body */
+  --step-1: 1.328rem; /* 21.25px */
+  --step-2: 1.66rem; /* 26.6px */
+  --step-3: 2.075rem; /* 33.2px */
+  --step-4: 2.594rem; /* 41.5px — index/note titles */
+  --step-5: 3.242rem; /* 51.9px — home wordmark on desktop */
+
+  --leading-body: 1.7;
+  --leading-tight: 1.15;
+
+  /* --- Fraunces axes: wonk on, soft moderate (§7.3) --- */
+  --fraunces-soft: 40;
+  --fraunces-wonk: 1;
+
+  /* --- Measure & rhythm --- */
+  --measure: 68ch;
+  --space-1: 0.5rem;
+  --space-2: 0.75rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2.5rem;
+  --space-6: 4rem;
+
+  --rail-width: 15rem; /* desktop filter / branch column */
+  --hairline: 1px;
+
+  /* --- Motion (§7.8) --- */
+  --dur-reveal: 400ms;
+  --dur-fade: 200ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  color-scheme: dark;
+}
+
+/*
+ * Light mode is a genuine second theme, not an inversion. The night-garden
+ * ground becomes a pale-petal paper; blossom and fallen stay recognisably
+ * themselves. Toggle stamps [data-theme] on <html>; system preference is the
+ * default when unstamped.
+ */
+:root[data-theme='light'] {
+  --yozakura: #faf3f5;
+  --bark: #f0e4e9;
+  --petal: #2a2030;
+  --dusk: #6f6076;
+  --blossom: #b64c72;
+  --fallen: #9e3b5c;
+  --branch: #d9c7d0;
+  --stem: #c58ea1;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --yozakura: #faf3f5;
+    --bark: #f0e4e9;
+    --petal: #2a2030;
+    --dusk: #6f6076;
+    --blossom: #b64c72;
+    --fallen: #9e3b5c;
+    --branch: #d9c7d0;
+    --stem: #c58ea1;
+    color-scheme: light;
+  }
+}

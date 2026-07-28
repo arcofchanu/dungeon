@@ -1,0 +1,24 @@
+---
+import { redactionSegments } from '../lib/notes';
+
+interface Props {
+  text: string;
+  phrases: string[];
+}
+
+const { text, phrases } = Astro.props;
+const segments = redactionSegments(text, phrases);
+---
+
+{
+  segments.map((segment) =>
+    segment.redacted ? (
+      <span class="redaction" data-redaction>
+        <span class="redaction-bar" aria-hidden="true" />
+        <span class="redaction-text">{segment.text}</span>
+      </span>
+    ) : (
+      <Fragment>{segment.text}</Fragment>
+    ),
+  )
+}
