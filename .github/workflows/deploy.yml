@@ -1,0 +1,63 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  # Lets you re-deploy from the Actions tab without a new commit.
+  workflow_dispatch:
+
+# Allow one concurrent deployment; don't cancel a run that is mid-deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Must precede the build: it resolves the Pages origin that the build
+      # bakes into canonical and og:url.
+      - uses: actions/configure-pages@v5
+        id: pages
+
+      # Unit tests for the Markdown plugins (redaction, wikilinks).
+      - run: npm test
+
+      # astro build -> pagefind index -> service worker -> verify.
+      # `verify` fails the run if a private/draft note leaked into dist/,
+      # the search index is missing, or client JS blew the 60KB budget.
+      - run: npm run build
+        env:
+          SITE_URL: ${{ steps.pages.outputs.origin || steps.pages.outputs.base_url }}
+
+      # Pages served via Actions does not run Jekyll, but this makes the
+      # underscore-prefixed _astro/ directory safe regardless.
+      - run: touch dist/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment
