@@ -1,0 +1,1 @@
+function e(){let e=document.querySelector(`[data-branch]`);e&&(e.classList.remove(`js-ready`),e.style.setProperty(`--progress`,`100%`),e.querySelector(`.branch-node`)?.classList.add(`is-current`));let t=document.querySelectorAll(`[data-redaction]`);for(let e of t)e.classList.add(`is-fading`,`is-revealed`)}export{e as applyStaticState};
