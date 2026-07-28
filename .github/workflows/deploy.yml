@@ -42,7 +42,8 @@ jobs:
       # the search index is missing, or client JS blew the 60KB budget.
       - run: npm run build
         env:
-          SITE_URL: ${{ steps.pages.outputs.origin || steps.pages.outputs.base_url }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
 
       # Pages served via Actions does not run Jekyll, but this makes the
       # underscore-prefixed _astro/ directory safe regardless.
