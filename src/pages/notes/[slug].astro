@@ -70,7 +70,7 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
                 <dt>{group.label}</dt>
                 <dd>
                   {group.tags.map((tag) => (
-                    <a class="meta-tag" href={`/?tag=${encodeURIComponent(tag.raw)}`}>
+                    <a class="meta-tag" href={`${import.meta.env.BASE_URL}?tag=${encodeURIComponent(tag.raw)}`}>
                       {tag.value}
                     </a>
                   ))}
@@ -85,7 +85,7 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
                 <dt>Tags</dt>
                 <dd>
                   {freeTags.map((tag) => (
-                    <a class="meta-tag" href={`/?tag=${encodeURIComponent(tag.raw)}`}>
+                    <a class="meta-tag" href={`${import.meta.env.BASE_URL}?tag=${encodeURIComponent(tag.raw)}`}>
                       {tag.value}
                     </a>
                   ))}
@@ -122,7 +122,7 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
             <ul class="backlinks-list">
               {backlinks.map((link) => (
                 <li>
-                  <a href={`/notes/${link.slug}/`}>{link.title}</a>
+                  <a href={`${import.meta.env.BASE_URL}notes/${link.slug}/`}>{link.title}</a>
                 </li>
               ))}
             </ul>

@@ -23,7 +23,7 @@ const tagList = note.tags.map((t) => t.raw).join(' ');
   </p>
 
   <h2 class="row-title">
-    <a href={`/notes/${note.slug}/`}>{note.title}</a>
+    <a href={`${import.meta.env.BASE_URL}notes/${note.slug}/`}>{note.title}</a>
   </h2>
 
   <p class="row-summary">

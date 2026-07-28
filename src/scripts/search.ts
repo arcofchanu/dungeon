@@ -38,7 +38,7 @@ async function loadPagefind(): Promise<PagefindApi | null> {
   try {
     // Vite must not try to resolve this — the bundle is produced by the
     // `pagefind` CLI after `astro build`, so it does not exist at build time.
-    const path = '/pagefind/pagefind.js';
+    const path = `${import.meta.env.BASE_URL}pagefind/pagefind.js`;
     const module = (await import(/* @vite-ignore */ path)) as unknown as PagefindApi;
     await module.init();
     pagefind = module;

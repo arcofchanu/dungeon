@@ -9,6 +9,7 @@ import { yozakuraTextPlugin, yozakuraFenceTransformer } from './src/lib/markdown
 // https://astro.build/config
 export default defineConfig({
   site: process.env.SITE_URL ?? 'https://yozakura.pages.dev',
+  base: process.env.BASE_PATH || '/',
   integrations: [mdx()],
   build: {
     // Pagefind indexes `dist/`; directory-style output keeps note URLs stable.
