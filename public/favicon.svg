@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" fill="none"/>
+  <g transform="translate(16 16) scale(1.1345)">
+    <g transform="rotate(0)"><path d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z" fill="#E890AC"/></g><g transform="rotate(72)"><path d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z" fill="#E890AC"/></g><g transform="rotate(144)"><path d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z" fill="#E890AC"/></g><g transform="rotate(216)"><path d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z" fill="#E890AC"/></g><g transform="rotate(288)"><path d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z" fill="#E890AC"/></g>
+    <circle r="1.5" fill="#F2DCE4"/>
+  </g>
+</svg>
