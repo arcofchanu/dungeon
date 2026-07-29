@@ -1,11 +1,17 @@
 ---
 /*
- * The home page is static: no client script of its own, no filtering, no
- * dialog. Every blossom is a plain link, the search field is a plain GET form
- * that hands its query to /notes/, and the whole page works with JS off.
+ * The home page is one fixed screen — it never scrolls, on any size. The tree
+ * takes the height left over from the intro, the search field and the footer,
+ * and scales into it.
+ *
+ * The markup is still static: every blossom is a plain link, the search field
+ * is a plain GET form that hands its query to /notes/, and the whole page works
+ * with JS off. src/scripts/grove.ts is the one enhancement — it intercepts a
+ * click on a blossom and answers with the preview dialog below instead of
+ * navigating. Without it, the click is simply the navigation.
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { allNotes } from '../lib/notes';
+import { allNotes, formatDate } from '../lib/notes';
 import { BOUGH_DS, FALLEN, GROUND_Y, TRUNK_D, VIEW_BOX, groveAnchors } from '../lib/grove';
 
 const notes = await allNotes();
@@ -18,6 +24,8 @@ const blossoms = notes.map((note, index) => ({
   anchor: anchors[index],
   /* The three newest sit at full --blossom; the rest are --stem. */
   fresh: index < 3,
+  /* Read by the dialog — the same mono line the cards carry (§7.4). */
+  meta: `${formatDate(note.date)} · ${note.readingMinutes} min`,
 }));
 
 // The meta/og description stays long — that one is read by machines and by
@@ -27,10 +35,10 @@ const description =
 const lede = 'Personal write-ups and journals.';
 
 const noteWord = notes.length === 1 ? 'note' : 'notes';
-const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for its title`;
+const caption = `${notes.length} ${noteWord} on the tree — pick a blossom to preview it`;
 ---
 
-<BaseLayout title="Yozakura" description={description} path="/">
+<BaseLayout title="Yozakura" description={description} path="/" bodyClass="home">
   <section class="grove wrap" aria-labelledby="grove-title">
     <div class="grove-intro">
       <h1 class="grove-title" id="grove-title">Yozakura</h1>
@@ -41,7 +49,7 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
       <a class="grove-button mono" href="/notes/">All notes</a>
     </div>
 
-    <div class="grove-tree">
+    <div class="grove-tree" data-grove>
       <svg
         class="grove-svg"
         viewBox={VIEW_BOX}
@@ -79,8 +87,13 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
         </g>
 
         {
-          blossoms.map(({ note, anchor, fresh }) => (
-            <a class:list={['grove-bloom', fresh && 'is-fresh']} href={`/notes/${note.slug}/`}>
+          blossoms.map(({ note, anchor, fresh, meta }) => (
+            <a
+              class:list={['grove-bloom', fresh && 'is-fresh']}
+              href={`/notes/${note.slug}/`}
+              data-title={note.title}
+              data-meta={meta}
+            >
               {/* The whole label: a native tooltip on hover, the accessible
                   name for the link, and no script needed for either. */}
               <title>{note.title}</title>
@@ -99,6 +112,45 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
       </svg>
 
       <p class="grove-caption mono">{caption}</p>
+
+      {/*
+        The blossom preview. Server-rendered and inert — grove.ts fills it in,
+        positions it against the blossom that was clicked, and unhides it. The
+        arrow is a real link, so the dialog is one tab stop from the note.
+      */}
+      <div
+        class="bloom-pop"
+        data-grove-pop
+        role="dialog"
+        aria-modal="false"
+        aria-labelledby="bloom-pop-title"
+        hidden
+      >
+        <button
+          type="button"
+          class="bloom-pop-close mono"
+          data-grove-pop-close
+          aria-label="Close preview"
+        >
+          ✕
+        </button>
+
+        <p class="bloom-pop-meta mono" data-grove-pop-meta></p>
+        <h2 class="bloom-pop-title" id="bloom-pop-title" data-grove-pop-title></h2>
+
+        <a class="bloom-pop-open mono" data-grove-pop-link href="/notes/">
+          Open note
+          <svg class="bloom-pop-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+            <path
+              d="M2.5 8h10M8.5 4l4 4-4 4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"></path>
+          </svg>
+        </a>
+      </div>
     </div>
 
     {/*
@@ -142,20 +194,34 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
    * DOM order and the requested reading order, so nothing is visually
    * reordered away from the tab sequence. Desktop keeps the same source order
    * and just parks the tree in a column of its own, spanning both rows.
+   *
+   * The page does not scroll (see `body.home` in global.css), so the grid is
+   * sized in one screen: intro and search take what they need, the tree row is
+   * `minmax(0, 1fr)` and absorbs the rest. The 0 minimum is the load-bearing
+   * part — an auto minimum would let the SVG's own height win and push the
+   * search field off the bottom of the viewport.
    */
   .grove {
     display: grid;
     grid-template-areas: 'intro' 'tree' 'search';
-    gap: var(--space-5);
-    padding-block: var(--space-5);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    gap: var(--space-3);
+    padding-block: var(--space-3);
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .grove-intro {
     grid-area: intro;
   }
 
+  /* Positioning context for the blossom dialog. */
   .grove-tree {
     grid-area: tree;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
   .grove-searchbox {
@@ -168,7 +234,7 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
   }
 
   .grove-lede {
-    margin: 0 0 var(--space-4);
+    margin: 0 0 var(--space-3);
     max-width: 42ch;
     color: var(--dusk);
     font-size: var(--step-1);
@@ -256,17 +322,26 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
     color: var(--yozakura);
   }
 
+  /*
+   * `flex: 1 1 0` makes the flex algorithm — not the SVG's intrinsic aspect
+   * ratio — decide the box height, and the viewBox does the rest: the tree
+   * fits itself into whatever box it is given, at any viewport size, without
+   * ever overflowing it. `overflow: visible` stays for the blossoms at the
+   * canopy edge, which sit a petal outside the viewBox.
+   */
   .grove-svg {
     display: block;
+    flex: 1 1 0;
+    min-height: 0;
     width: 100%;
     max-width: 22rem;
-    height: auto;
     margin-inline: auto;
     overflow: visible;
   }
 
   .grove-caption {
-    margin: var(--space-3) 0 0;
+    flex: 0 0 auto;
+    margin: var(--space-2) 0 0;
     min-height: 1.5em;
     text-align: center;
     font-family: var(--font-mono);
@@ -325,12 +400,14 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
 
   /* Colour only — §7.7 rules out the transform-on-hover reflex. */
   .grove-bloom:hover .grove-petals,
-  .grove-bloom:focus-visible .grove-petals {
+  .grove-bloom:focus-visible .grove-petals,
+  .grove-bloom.is-open .grove-petals {
     fill: var(--blossom);
   }
 
   .grove-bloom:hover .grove-centre,
-  .grove-bloom:focus-visible .grove-centre {
+  .grove-bloom:focus-visible .grove-centre,
+  .grove-bloom.is-open .grove-centre {
     fill: var(--yozakura);
     opacity: 1;
   }
@@ -340,30 +417,164 @@ const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for
     outline-offset: 1px;
   }
 
-  @media (min-width: 60rem) {
+  /* ---------------------------------------------------------------- */
+  /* The blossom preview                                               */
+  /* ---------------------------------------------------------------- */
+
+  /*
+   * Absolutely placed inside .grove-tree; grove.ts writes the left/top from
+   * the blossom's own box. A hairline card on --bark, hard corners, no shadow
+   * (§7.7) — the same object language as the note cards.
+   */
+  .bloom-pop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    /* Under the sticky header (z 20), over the tree. */
+    z-index: 15;
+    width: max-content;
+    max-width: min(17rem, 100%);
+    background: var(--bark);
+    border: var(--hairline) solid var(--stem);
+    border-radius: 2px;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+
+  .bloom-pop[hidden] {
+    display: none;
+  }
+
+  .bloom-pop-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    /* Small glyph, tap-sized box. */
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .bloom-pop-close:hover {
+    color: var(--blossom);
+  }
+
+  .bloom-pop-meta {
+    margin: 0 var(--space-5) 0.15rem 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .bloom-pop-title {
+    margin: 0 0 var(--space-2);
+    font-size: var(--step-1);
+    line-height: var(--leading-tight);
+    color: var(--petal);
+    text-wrap: balance;
+  }
+
+  /* The arrow out of the dialog and into the note. */
+  .bloom-pop-open {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    border: var(--hairline) solid var(--stem);
+    border-radius: 2px;
+    padding: 0.35rem 0.7rem;
+    color: var(--blossom);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  .bloom-pop-open:hover {
+    background: var(--blossom);
+    border-color: var(--blossom);
+    color: var(--yozakura);
+  }
+
+  .bloom-pop-arrow {
+    flex: 0 0 auto;
+  }
+
+  /*
+   * Two columns on desktop — and also on anything short and wide, which is
+   * every phone held sideways. Stacked, a 375px-tall viewport has nothing left
+   * for the tree once the intro and the search field have taken theirs, so the
+   * height-limited case takes the side-by-side arrangement early.
+   */
+  @media (min-width: 60rem), (min-width: 45rem) and (max-height: 32rem) {
     .grove {
-      /* Same source order; the tree simply spans both rows of its own column. */
-      grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+      /* Same source order; the tree simply spans both rows of its own column.
+         The column is wider than the old scrolling layout's — with a full
+         screen of height to fill, the canopy is width-limited, not
+         height-limited, and 24rem left the tree stranded in its own column. */
+      grid-template-columns: minmax(0, 1fr) minmax(0, 30rem);
       grid-template-areas:
         'intro tree'
         'search tree';
-      grid-template-rows: auto 1fr;
+      /* The tree spans both rows and stretches, so the intro row takes the
+         slack and the search field sits on the bottom edge of the screen. */
+      grid-template-rows: minmax(0, 1fr) auto;
       column-gap: var(--space-6);
       row-gap: var(--space-4);
-      align-items: start;
-      padding-block: var(--space-6);
+      padding-block: var(--space-5);
     }
 
     .grove-intro {
       max-width: 34rem;
+      align-self: center;
     }
 
-    .grove-title {
-      font-size: var(--step-5);
+    .grove-searchbox {
+      align-self: end;
     }
 
     .grove-svg {
       max-width: none;
+    }
+  }
+
+  /* The display-size wordmark needs the height to earn it. */
+  @media (min-width: 60rem) and (min-height: 44rem) {
+    .grove-title {
+      font-size: var(--step-5);
+    }
+  }
+
+  /* Last resort on a genuinely short screen: the intro gives up its weight so
+     the tree keeps a usable share of the one screen there is. */
+  @media (max-height: 30rem) {
+    .grove {
+      padding-block: var(--space-2);
+      gap: var(--space-2);
+    }
+
+    .grove-title {
+      font-size: var(--step-2);
+      margin-bottom: var(--space-2);
+    }
+
+    .grove-lede {
+      font-size: var(--step-0);
+      margin-bottom: var(--space-2);
+    }
+
+    .grove-caption {
+      display: none;
     }
   }
 </style>

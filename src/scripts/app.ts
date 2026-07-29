@@ -4,12 +4,14 @@
  * first note/index paint under `prefers-reduced-motion: no-preference`.
  */
 import { initFilters } from './filters';
+import { initGrove } from './grove';
 import { initPwa } from './pwa';
 import { initSearch } from './search';
 import { initTheme } from './theme';
 
 initTheme();
 initFilters();
+initGrove();
 initSearch();
 initPwa();
 

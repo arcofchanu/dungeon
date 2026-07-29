@@ -292,6 +292,44 @@ img {
   }
 }
 
+/*
+ * The home page is one fixed screen, on every size (§7.5C).
+ *
+ * Nothing below the fold and nothing to scroll: the shell is a flex column
+ * exactly one viewport tall, and the tree takes whatever height is left after
+ * the header, the intro, the search field and the footer have had theirs. The
+ * SVG has a viewBox, so "whatever is left" is all it needs — it scales itself
+ * rather than pushing the page taller. Only the home page opts in; every other
+ * route scrolls normally.
+ */
+html:has(body.home) {
+  height: 100%;
+  overflow: hidden;
+  /* No rubber-band on iOS: there is nothing underneath to reveal. */
+  overscroll-behavior: none;
+}
+
+body.home {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.home main {
+  display: flex;
+  flex: 1 1 auto;
+  /* Without this the tree's row can't shrink below its content height. */
+  min-height: 0;
+}
+
+body.home .site-footer {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
+}
+
 .wrap {
   width: 100%;
   max-width: 72rem;
