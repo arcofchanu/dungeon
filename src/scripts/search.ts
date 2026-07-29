@@ -7,47 +7,9 @@
  * trapped while open and returned to the trigger on close.
  */
 
-interface PagefindResultData {
-  url: string;
-  excerpt: string;
-  meta: Record<string, string>;
-  filters?: Record<string, string[]>;
-}
-
-interface PagefindResult {
-  id: string;
-  data: () => Promise<PagefindResultData>;
-}
-
-interface PagefindApi {
-  init: () => Promise<void>;
-  debouncedSearch: (
-    query: string | null,
-    options?: unknown,
-    debounceMs?: number,
-  ) => Promise<{ results: PagefindResult[] } | null>;
-}
+import { loadPagefind, type PagefindResultData } from './pagefind';
 
 const MAX_RESULTS = 20;
-
-let pagefind: PagefindApi | null = null;
-let pagefindFailed = false;
-
-async function loadPagefind(): Promise<PagefindApi | null> {
-  if (pagefind || pagefindFailed) return pagefind;
-  try {
-    // Vite must not try to resolve this — the bundle is produced by the
-    // `pagefind` CLI after `astro build`, so it does not exist at build time.
-    const path = `${import.meta.env.BASE_URL}pagefind/pagefind.js`;
-    const module = (await import(/* @vite-ignore */ path)) as unknown as PagefindApi;
-    await module.init();
-    pagefind = module;
-    return pagefind;
-  } catch {
-    pagefindFailed = true;
-    return null;
-  }
-}
 
 export function initSearch() {
   const root = document.querySelector<HTMLElement>('[data-search]');

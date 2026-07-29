@@ -73,14 +73,27 @@ const last = Math.max(nodes.length - 1, 1);
    * it is a real <nav> with real links — the animation decorates a control
    * that works without it.
    */
+  /*
+   * Mobile: a horizontal strip pinned directly under the sticky header.
+   *
+   * It used to be a fixed vertical rail at the left edge, which sat *on top of*
+   * the prose — the wrap's 1rem inline padding is narrower than the rail, so
+   * every line of body text ran under the branch. Reserving a left gutter
+   * instead would cost ~14% of a 375px measure, so the rail lies down: it owns
+   * its own band, the text owns the full width, and nothing overlaps. The
+   * `--progress` / `--pos` custom properties are percentages, so motion.ts
+   * drives both orientations without knowing which one is on screen.
+   */
   .branch {
     position: fixed;
-    left: max(var(--space-1), env(safe-area-inset-left));
-    top: 5rem;
-    bottom: var(--space-5);
-    width: 26px;
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    height: var(--branch-strip);
     z-index: 10;
     pointer-events: none;
+    background: var(--yozakura);
+    border-bottom: var(--hairline) solid var(--branch);
   }
 
   .branch-defs {
@@ -89,24 +102,23 @@ const last = Math.max(nodes.length - 1, 1);
     height: 0;
   }
 
-  /* Mobile: a 3px rail. Five-petal glyphs at 375px are mush (§7.8). */
   .branch-line,
   .branch-fill {
     position: absolute;
-    left: 50%;
-    translate: -50% 0;
-    width: 3px;
-    top: 0;
+    left: 0;
+    top: 50%;
+    translate: 0 -50%;
+    height: 2px;
     border-radius: 0;
   }
 
   .branch-line {
-    bottom: 0;
+    width: 100%;
     background: var(--branch);
   }
 
   .branch-fill {
-    height: var(--progress, 0%);
+    width: var(--progress, 0%);
     background: var(--stem);
   }
 
@@ -120,8 +132,8 @@ const last = Math.max(nodes.length - 1, 1);
 
   .branch-node {
     position: absolute;
-    top: calc(var(--pos) * 100%);
-    left: 50%;
+    left: calc(var(--pos) * 100%);
+    top: 50%;
     translate: -50% -50%;
     /* Mobile shows a single blossom at the current position only (§7.8). */
     display: none;
@@ -196,19 +208,41 @@ const last = Math.max(nodes.length - 1, 1);
   }
 
   @media (min-width: 60rem) {
+    /* Desktop has a column to spare, so the branch stands back up. */
     .branch {
       position: sticky;
       top: 6rem;
       left: auto;
+      right: auto;
       bottom: auto;
       height: calc(100dvh - 9rem);
       width: 26px;
       align-self: start;
+      background: none;
+      border-bottom: none;
     }
 
     .branch-line,
     .branch-fill {
+      left: 50%;
+      top: 0;
+      translate: -50% 0;
       width: var(--hairline);
+    }
+
+    .branch-line {
+      height: 100%;
+    }
+
+    .branch-fill {
+      width: var(--hairline);
+      height: var(--progress, 0%);
+    }
+
+    .branch-node {
+      top: calc(var(--pos) * 100%);
+      left: 50%;
+      translate: -50% -50%;
     }
 
     /* Desktop: every bud is visible, and the set of them is the contents. */

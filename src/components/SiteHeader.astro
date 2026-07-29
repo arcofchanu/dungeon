@@ -5,7 +5,7 @@
 
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="wordmark" href={import.meta.env.BASE_URL}>Yozakura</a>
+    <a class="wordmark" href="/">Yozakura</a>
 
     <div class="header-actions">
       <button type="button" class="search-trigger" data-search-open aria-keyshortcuts="Meta+K Control+K">
@@ -43,7 +43,7 @@
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
-    min-height: 3.25rem;
+    min-height: var(--header-h);
   }
 
   .wordmark {
@@ -118,10 +118,6 @@
   @media (min-width: 40rem) {
     .search-trigger-label {
       display: inline;
-    }
-
-    .header-inner {
-      min-height: 4rem;
     }
   }
 </style>

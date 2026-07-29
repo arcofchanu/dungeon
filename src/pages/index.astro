@@ -1,103 +1,369 @@
 ---
+/*
+ * The home page is static: no client script of its own, no filtering, no
+ * dialog. Every blossom is a plain link, the search field is a plain GET form
+ * that hands its query to /notes/, and the whole page works with JS off.
+ */
 import BaseLayout from '../layouts/BaseLayout.astro';
-import FilterRail from '../components/FilterRail.astro';
-import NoteRow from '../components/NoteRow.astro';
-import { allNotes, tagGroups } from '../lib/notes';
+import { allNotes } from '../lib/notes';
+import { BOUGH_DS, FALLEN, GROUND_Y, TRUNK_D, VIEW_BOX, groveAnchors } from '../lib/grove';
 
 const notes = await allNotes();
-const groups = await tagGroups();
 
+// One blossom per note, newest at the tips. Positions are derived from the
+// same curves the branches are drawn from (src/lib/grove.ts).
+const anchors = groveAnchors(notes.length);
+const blossoms = notes.map((note, index) => ({
+  note,
+  anchor: anchors[index],
+  /* The three newest sit at full --blossom; the rest are --stem. */
+  fresh: index < 3,
+}));
+
+// The meta/og description stays long — that one is read by machines and by
+// people who never see the page. The on-page lede is not the same job.
 const description =
   'A personal research archive for AI and LLM red-teaming work — prompt injection, jailbreak taxonomies, model behaviour, and competition write-ups.';
+const lede = 'Personal write-ups and journals.';
+
+const noteWord = notes.length === 1 ? 'note' : 'notes';
+const caption = `${notes.length} ${noteWord} on the tree — hover a blossom for its title`;
 ---
 
 <BaseLayout title="Yozakura" description={description} path="/">
-  <div class="wrap index">
-    <FilterRail groups={groups} total={notes.length} />
+  <section class="grove wrap" aria-labelledby="grove-title">
+    <div class="grove-intro">
+      <h1 class="grove-title" id="grove-title">Yozakura</h1>
+      <p class="grove-lede">{lede}</p>
 
-    <div class="index-main">
-      <div class="index-bar">
-        <h1 class="visually-hidden">Notes</h1>
-        <button type="button" class="filter-trigger mono" data-filter-open>Filters</button>
-        <p class="index-count mono" data-visible-count aria-live="polite">
-          {notes.length} notes
-        </p>
-      </div>
-
-      <div class="index-list" data-note-list>
-        {notes.map((note) => <NoteRow note={note} />)}
-      </div>
-
-      <p class="index-empty mono" data-empty hidden>No notes match those filters.</p>
+      {/* Its own control, on its own page — deliberately not parked under the
+          search field, and not an in-page jump. */}
+      <a class="grove-button mono" href="/notes/">All notes</a>
     </div>
-  </div>
+
+    <div class="grove-tree">
+      <svg
+        class="grove-svg"
+        viewBox={VIEW_BOX}
+        role="group"
+        aria-label="Every note as a blossom on the tree"
+      >
+        <defs>
+          {/* One petal, five rotations — the same glyph the note-page branch uses. */}
+          <path
+            id="yz-grove-petal"
+            d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z"
+          />
+          <g id="yz-grove-bloom">
+            <g transform="rotate(0)"><use href="#yz-grove-petal"></use></g>
+            <g transform="rotate(72)"><use href="#yz-grove-petal"></use></g>
+            <g transform="rotate(144)"><use href="#yz-grove-petal"></use></g>
+            <g transform="rotate(216)"><use href="#yz-grove-petal"></use></g>
+            <g transform="rotate(288)"><use href="#yz-grove-petal"></use></g>
+          </g>
+        </defs>
+
+        <g class="grove-wood" aria-hidden="true">
+          <path class="grove-ground" d={`M146,${GROUND_Y} H334`} />
+          <path class="grove-trunk" d={TRUNK_D} />
+          {BOUGH_DS.map((d) => <path class="grove-bough" d={d} />)}
+          {
+            FALLEN.map((petal) => (
+              <use
+                class="grove-fallen"
+                href="#yz-grove-petal"
+                transform={`translate(${petal.x} ${petal.y}) rotate(${petal.rotate}) scale(${petal.scale})`}
+              />
+            ))
+          }
+        </g>
+
+        {
+          blossoms.map(({ note, anchor, fresh }) => (
+            <a class:list={['grove-bloom', fresh && 'is-fresh']} href={`/notes/${note.slug}/`}>
+              {/* The whole label: a native tooltip on hover, the accessible
+                  name for the link, and no script needed for either. */}
+              <title>{note.title}</title>
+              {/* Hit area first and larger than the glyph — a 20px blossom is
+                  not a tap target on a 375px screen. */}
+              <circle class="grove-hit" cx={anchor.x} cy={anchor.y} r="14" />
+              <g transform={`translate(${anchor.x} ${anchor.y}) rotate(${anchor.rotate})`}>
+                <g transform={`scale(${anchor.scale})`}>
+                  <use class="grove-petals" href="#yz-grove-bloom" />
+                  <circle class="grove-centre" r="1.6" />
+                </g>
+              </g>
+            </a>
+          ))
+        }
+      </svg>
+
+      <p class="grove-caption mono">{caption}</p>
+    </div>
+
+    {/*
+      A plain GET form. Submitting navigates to /notes/?q=… where the archive
+      does the filtering — no dialog, no script on this page, works with JS off.
+    */}
+    <div class="grove-searchbox">
+      <form class="grove-search" role="search" action="/notes/" method="get">
+        <label class="visually-hidden" for="grove-search-input">Search the archive</label>
+        <svg class="grove-search-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+          <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"
+          ></circle>
+          <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+          ></path>
+        </svg>
+        <input
+          type="search"
+          id="grove-search-input"
+          class="grove-search-input"
+          name="q"
+          placeholder="Search the archive"
+          enterkeyhint="search"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        />
+        <button type="submit" class="grove-search-go mono">Search</button>
+      </form>
+    </div>
+  </section>
+
 </BaseLayout>
 
 <style>
-  .index {
-    padding-block: var(--space-4) var(--space-5);
+  /* ---------------------------------------------------------------- */
+  /* The grove                                                         */
+  /* ---------------------------------------------------------------- */
+
+  /*
+   * Three areas. On mobile they stack intro → tree → search, which is both the
+   * DOM order and the requested reading order, so nothing is visually
+   * reordered away from the tab sequence. Desktop keeps the same source order
+   * and just parks the tree in a column of its own, spanning both rows.
+   */
+  .grove {
+    display: grid;
+    grid-template-areas: 'intro' 'tree' 'search';
+    gap: var(--space-5);
+    padding-block: var(--space-5);
   }
 
-  .index-bar {
+  .grove-intro {
+    grid-area: intro;
+  }
+
+  .grove-tree {
+    grid-area: tree;
+  }
+
+  .grove-searchbox {
+    grid-area: search;
+  }
+
+  .grove-title {
+    font-size: var(--step-4);
+    margin: 0 0 var(--space-3);
+  }
+
+  .grove-lede {
+    margin: 0 0 var(--space-4);
+    max-width: 42ch;
+    color: var(--dusk);
+    font-size: var(--step-1);
+    line-height: 1.5;
+  }
+
+  .grove-search {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
-    padding-bottom: var(--space-2);
-  }
-
-  .filter-trigger {
-    background: none;
+    gap: var(--space-2);
+    max-width: 30rem;
     border: var(--hairline) solid var(--branch);
     border-radius: 2px;
+    background: var(--bark);
+    padding: 0 var(--space-2);
+  }
+
+  .grove-search:focus-within {
+    border-color: var(--blossom);
+  }
+
+  .grove-search-icon {
+    flex: 0 0 auto;
+    color: var(--dusk);
+  }
+
+  .grove-search-input {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--petal);
+    font-family: var(--font-body);
+    font-size: var(--step-0);
+    /* 16px minimum, or iOS Safari zooms the page on focus. */
+    padding: 0.6rem 0;
+  }
+
+  .grove-search-input::placeholder {
+    color: var(--dusk);
+    opacity: 1;
+  }
+
+  .grove-search-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  /* A real submit button, because without JS the form needs one to be obvious. */
+  .grove-search-go {
+    flex: 0 0 auto;
+    background: none;
+    border: none;
+    border-left: var(--hairline) solid var(--branch);
     color: var(--dusk);
     font-family: var(--font-mono);
     font-size: var(--step--1);
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    padding: 0.35rem 0.7rem;
+    padding: 0.5rem 0 0.5rem var(--space-2);
+    margin-left: var(--space-1);
     cursor: pointer;
   }
 
-  .filter-trigger:hover {
+  .grove-search-go:hover {
     color: var(--blossom);
-    border-color: var(--stem);
   }
 
-  .index-count {
-    margin: 0;
+  .grove-button {
+    display: inline-block;
+    border: var(--hairline) solid var(--stem);
+    border-radius: 2px;
+    padding: 0.45rem 0.9rem;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--blossom);
+    text-decoration: none;
+  }
+
+  .grove-button:hover {
+    background: var(--blossom);
+    border-color: var(--blossom);
+    color: var(--yozakura);
+  }
+
+  .grove-svg {
+    display: block;
+    width: 100%;
+    max-width: 22rem;
+    height: auto;
+    margin-inline: auto;
+    overflow: visible;
+  }
+
+  .grove-caption {
+    margin: var(--space-3) 0 0;
+    min-height: 1.5em;
+    text-align: center;
     font-family: var(--font-mono);
     font-size: var(--step--1);
     color: var(--dusk);
+    text-wrap: balance;
   }
 
-  .index-list {
-    border-top: var(--hairline) solid var(--branch);
+  /* --- the wood --- */
+  .grove-ground,
+  .grove-trunk,
+  .grove-bough {
+    fill: none;
+    stroke: var(--branch);
+    stroke-linecap: round;
   }
 
-  .index-empty {
-    padding: var(--space-5) 0;
-    color: var(--dusk);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
+  .grove-trunk {
+    stroke-width: 5;
+  }
+
+  .grove-bough {
+    stroke-width: 2.2;
+  }
+
+  .grove-ground {
+    stroke-width: var(--hairline);
+    opacity: 0.7;
+  }
+
+  .grove-fallen {
+    fill: var(--branch);
+  }
+
+  /* --- the blossoms --- */
+  .grove-hit {
+    fill: transparent;
+  }
+
+  .grove-petals {
+    fill: var(--stem);
+  }
+
+  .grove-centre {
+    fill: var(--petal);
+    opacity: 0.6;
+  }
+
+  .grove-bloom.is-fresh .grove-petals {
+    fill: var(--blossom);
+  }
+
+  .grove-bloom.is-fresh .grove-centre {
+    opacity: 1;
+  }
+
+  /* Colour only — §7.7 rules out the transform-on-hover reflex. */
+  .grove-bloom:hover .grove-petals,
+  .grove-bloom:focus-visible .grove-petals {
+    fill: var(--blossom);
+  }
+
+  .grove-bloom:hover .grove-centre,
+  .grove-bloom:focus-visible .grove-centre {
+    fill: var(--yozakura);
+    opacity: 1;
+  }
+
+  .grove-bloom:focus-visible {
+    outline: 2px solid var(--blossom);
+    outline-offset: 1px;
   }
 
   @media (min-width: 60rem) {
-    .index {
-      display: grid;
-      grid-template-columns: var(--rail-width) minmax(0, 1fr);
-      gap: var(--space-5);
+    .grove {
+      /* Same source order; the tree simply spans both rows of its own column. */
+      grid-template-columns: minmax(0, 1fr) minmax(0, 24rem);
+      grid-template-areas:
+        'intro tree'
+        'search tree';
+      grid-template-rows: auto 1fr;
+      column-gap: var(--space-6);
+      row-gap: var(--space-4);
       align-items: start;
-      padding-block: var(--space-5) var(--space-6);
+      padding-block: var(--space-6);
     }
 
-    /* The rail is the filter UI on desktop; the trigger is mobile-only. */
-    .filter-trigger {
-      display: none;
+    .grove-intro {
+      max-width: 34rem;
     }
 
-    .index-bar {
-      justify-content: flex-end;
+    .grove-title {
+      font-size: var(--step-5);
+    }
+
+    .grove-svg {
+      max-width: none;
     }
   }
 </style>

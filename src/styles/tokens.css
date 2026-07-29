@@ -49,12 +49,31 @@
   --rail-width: 15rem; /* desktop filter / branch column */
   --hairline: 1px;
 
+  /* Sticky-header height. The branch rail pins directly beneath it on mobile,
+     so the two must agree — hence a token rather than two guessed offsets. */
+  --header-h: 3.25rem;
+  /* Height of the mobile horizontal branch strip; 0 once the rail goes vertical. */
+  --branch-strip: 1.75rem;
+
   /* --- Motion (§7.8) --- */
   --dur-reveal: 400ms;
   --dur-fade: 200ms;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
   color-scheme: dark;
+}
+
+@media (min-width: 40rem) {
+  :root {
+    --header-h: 4rem;
+  }
+}
+
+@media (min-width: 60rem) {
+  :root {
+    /* Desktop puts the branch back in its own column — no strip to clear. */
+    --branch-strip: 0rem;
+  }
 }
 
 /*

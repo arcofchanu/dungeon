@@ -1,0 +1,142 @@
+---
+import type { Note } from '../lib/notes';
+import { formatDate } from '../lib/notes';
+import Redacted from './Redacted.astro';
+
+interface Props {
+  note: Note;
+}
+
+const { note } = Astro.props;
+
+// Mono metadata line: date · lead technique (the mockup in §7.4).
+const lead = note.tags.find((t) => t.namespace === 'type') ?? note.tags[0];
+const tagList = note.tags.map((t) => t.raw).join(' ');
+---
+
+<article
+  class="card"
+  data-note
+  data-slug={note.slug}
+  data-tags={tagList}
+  data-date={formatDate(note.date)}
+>
+  <p class="card-meta mono">
+    <time datetime={note.date.toISOString()}>{formatDate(note.date)}</time>
+    <span aria-hidden="true"> · </span>
+    <span class="card-lead">{lead.value}</span>
+    {note.draft && <span class="card-draft">draft</span>}
+  </p>
+
+  <h3 class="card-title">
+    {/* Stretched link: the whole card is the target, but the accessible name
+        stays the title alone rather than the card's full text. */}
+    <a class="card-link" href={`/notes/${note.slug}/`}>{note.title}</a>
+  </h3>
+
+  <p class="card-summary">
+    <Redacted text={note.summary} phrases={note.redact} />
+  </p>
+
+  <p class="card-foot mono">{note.readingMinutes} min · {note.wordCount} words</p>
+</article>
+
+<style>
+  /*
+   * A hairline box, hard corners, no shadow and no gradient (§7.7). Hover
+   * changes colour only — no transform, no lift.
+   */
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: var(--hairline) solid var(--branch);
+    background: var(--bark);
+  }
+
+  .card[hidden] {
+    display: none;
+  }
+
+  .card:hover,
+  .card:focus-within {
+    border-color: var(--stem);
+  }
+
+  .card-meta {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* --stem is a border colour in §7.2; as 13.6px text it sits at 2.6:1. The
+     lead technique is a tag, and --blossom is the tag colour — 7.9:1. */
+  .card-lead {
+    color: var(--blossom);
+  }
+
+  /* Severity chip rather than --fallen text: 2.8:1 as text, 5.0:1 inverted. */
+  .card-draft {
+    margin-left: var(--space-2);
+    color: var(--petal);
+    background: var(--fallen);
+    padding: 0 0.35em;
+  }
+
+  .card-title {
+    font-size: var(--step-1);
+    margin: 0;
+  }
+
+  .card-link {
+    color: var(--petal);
+    text-decoration: none;
+  }
+
+  .card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .card:hover .card-link,
+  .card-link:hover {
+    color: var(--blossom);
+  }
+
+  /* Lifted over the stretched link so the summary stays selectable — the rest
+     of the card is still one big target. */
+  .card-summary {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    color: var(--dusk);
+    font-size: var(--step-0);
+  }
+
+  /* Pushed to the bottom edge so a row of uneven cards still lines up. */
+  .card-foot {
+    margin: auto 0 0;
+    padding-top: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dusk);
+  }
+
+  @media (min-width: 60rem) {
+    .card {
+      padding: var(--space-4);
+    }
+
+    .card-title {
+      font-size: var(--step-2);
+    }
+  }
+</style>

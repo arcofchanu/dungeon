@@ -21,12 +21,12 @@ const recent = (await allNotes()).slice(0, 3);
 
     <p class="notfound-body">
       Try <button type="button" class="inline-trigger" data-search-open>search</button> or
-      <a href={import.meta.env.BASE_URL}>the index</a>.
+      <a href="/">the index</a>.
     </p>
 
     <h2 class="notfound-recent mono">Most recent</h2>
     <ul class="notfound-list">
-      {recent.map((note) => <li><a href={`${import.meta.env.BASE_URL}notes/${note.slug}/`}>{note.title}</a></li>)}
+      {recent.map((note) => <li><a href={`/notes/${note.slug}/`}>{note.title}</a></li>)}
     </ul>
   </div>
 </BaseLayout>

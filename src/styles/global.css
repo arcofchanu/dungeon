@@ -32,6 +32,13 @@ body {
   font-synthesis-weight: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  /* Backstop against a single wide child widening the whole document — that is
+     what makes mobile browsers shrink the initial scale and render the page
+     zoomed out. `clip` rather than `hidden`: hidden would make <body> a scroll
+     container and break the sticky header and the sticky branch. */
+  overflow-x: clip;
+  /* Payloads, hashes and base64 blobs have no break opportunities of their own. */
+  overflow-wrap: break-word;
 }
 
 h1,
@@ -126,8 +133,22 @@ blockquote {
   font-style: italic;
 }
 
+/*
+ * Tables scroll inside their own box instead of pushing the page wide.
+ *
+ * A three-column table of prose at 375px has a min-content width well past the
+ * viewport, and because the table is a normal in-flow child that width became
+ * the document's width — the whole page rendered zoomed out. `display: block`
+ * turns the table into a scroll container (its rows still lay out as a table
+ * via anonymous boxes); `width: max-content` keeps it shrink-to-fit so narrow
+ * tables don't stretch, and `max-width: 100%` is what actually caps it.
+ */
 table {
-  width: 100%;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
   border-collapse: collapse;
   font-size: var(--step--1);
 }
@@ -137,6 +158,8 @@ td {
   text-align: left;
   padding: var(--space-2) var(--space-3);
   border-bottom: var(--hairline) solid var(--branch);
+  /* Long single tokens in a cell must wrap rather than set the column width. */
+  overflow-wrap: break-word;
 }
 
 th {

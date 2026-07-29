@@ -36,6 +36,12 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
     <Branch headings={headings} />
 
     <article class="note" data-pagefind-body data-note-article>
+      {/* A link, not history.back() — it has to work on a cold open from a
+          shared URL, where there is no history to go back to. */}
+      <a class="note-back mono" href="/notes/" data-pagefind-ignore>
+        <span aria-hidden="true">←</span> All notes
+      </a>
+
       <header class="note-head">
         {note.draft && <p class="note-draft mono">Draft — excluded from production</p>}
 
@@ -70,7 +76,7 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
                 <dt>{group.label}</dt>
                 <dd>
                   {group.tags.map((tag) => (
-                    <a class="meta-tag" href={`${import.meta.env.BASE_URL}?tag=${encodeURIComponent(tag.raw)}`}>
+                    <a class="meta-tag" href={`/notes/?tag=${encodeURIComponent(tag.raw)}`}>
                       {tag.value}
                     </a>
                   ))}
@@ -85,7 +91,7 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
                 <dt>Tags</dt>
                 <dd>
                   {freeTags.map((tag) => (
-                    <a class="meta-tag" href={`${import.meta.env.BASE_URL}?tag=${encodeURIComponent(tag.raw)}`}>
+                    <a class="meta-tag" href={`/notes/?tag=${encodeURIComponent(tag.raw)}`}>
                       {tag.value}
                     </a>
                   ))}
@@ -122,7 +128,7 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
             <ul class="backlinks-list">
               {backlinks.map((link) => (
                 <li>
-                  <a href={`${import.meta.env.BASE_URL}notes/${link.slug}/`}>{link.title}</a>
+                  <a href={`/notes/${link.slug}/`}>{link.title}</a>
                 </li>
               ))}
             </ul>
@@ -134,12 +140,28 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
 </BaseLayout>
 
 <style>
+  /* Clear the fixed mobile branch strip; --branch-strip is 0 on desktop. */
   .note-wrap {
-    padding-block: var(--space-5) var(--space-6);
+    padding-block: calc(var(--space-5) + var(--branch-strip)) var(--space-6);
   }
 
   .note {
     max-width: var(--measure);
+  }
+
+  .note-back {
+    display: inline-block;
+    margin-bottom: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dusk);
+    text-decoration: none;
+  }
+
+  .note-back:hover {
+    color: var(--blossom);
   }
 
   .note-draft {
@@ -256,14 +278,19 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
     max-width: var(--measure);
   }
 
+  /* Header + branch strip + a little air, so a bud jump lands the heading in
+     view rather than behind the chrome. */
+  .prose h2,
+  .prose h3 {
+    scroll-margin-top: calc(var(--header-h) + var(--branch-strip) + var(--space-2));
+  }
+
   .prose h2 {
     margin-top: var(--space-5);
-    scroll-margin-top: 5rem;
   }
 
   .prose h3 {
     margin-top: var(--space-4);
-    scroll-margin-top: 5rem;
   }
 
   .prose li {
@@ -275,6 +302,14 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
   }
 
   .prose pre {
+    max-width: 100%;
+  }
+
+  /* `.prose > *` outranks the bare `table` selector in global.css, so the
+     `max-width: 100%` that keeps a wide table inside its scroll box has to be
+     restated here — otherwise the measure (68ch) wins and the table is free to
+     widen the page again on a narrow screen. */
+  .prose table {
     max-width: 100%;
   }
 </style>

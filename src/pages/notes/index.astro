@@ -1,0 +1,260 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import FilterRail from '../../components/FilterRail.astro';
+import NoteCard from '../../components/NoteCard.astro';
+import { allNotes, tagGroups } from '../../lib/notes';
+
+const notes = await allNotes();
+const groups = await tagGroups();
+
+const description =
+  'Every note in the archive — filter by technique, target model, or competition, or search the full text.';
+
+const noteWord = notes.length === 1 ? 'note' : 'notes';
+---
+
+<BaseLayout title="All notes" description={description} path="/notes/">
+  <div class="wrap archive-head">
+    <a class="archive-back mono" href="/"><span aria-hidden="true">←</span> Home</a>
+
+    <h1 class="archive-title">All notes</h1>
+
+    {/*
+      A real GET form, so it works with JS off and so the home page can hand a
+      query straight over as /notes/?q=… . With JS, filters.ts takes over on
+      `input` and filters the cards below without a reload.
+    */}
+    <form class="archive-search" role="search" action="/notes/" method="get">
+      <label class="visually-hidden" for="archive-search-input">Search the archive</label>
+      <svg class="archive-search-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+        <circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.4"></circle>
+        <path d="M10.5 10.5 14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"
+        ></path>
+      </svg>
+      <input
+        type="search"
+        id="archive-search-input"
+        class="archive-search-input"
+        name="q"
+        data-note-query
+        placeholder="Search the archive"
+        enterkeyhint="search"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      />
+      <button
+        type="button"
+        class="archive-search-clear"
+        data-query-clear
+        hidden
+        aria-label="Clear search"
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <path d="M4 4 12 12M12 4 4 12" stroke="currentColor" stroke-width="1.6"
+            stroke-linecap="round"></path>
+        </svg>
+      </button>
+    </form>
+
+    <p class="archive-status mono" data-query-status aria-live="polite">
+      {notes.length} {noteWord} in the archive
+    </p>
+  </div>
+
+  <div class="wrap index" id="all">
+    <FilterRail groups={groups} total={notes.length} />
+
+    <div class="index-main">
+      <div class="index-bar">
+        <button type="button" class="filter-trigger mono" data-filter-open>Filters</button>
+        {/* Not a live region: the search status above already announces this
+            number, and two of them talk over each other. */}
+        <p class="index-count mono" data-visible-count>{notes.length} notes</p>
+      </div>
+
+      <div class="index-list" data-note-list>
+        {notes.map((note) => <NoteCard note={note} />)}
+      </div>
+
+      <p class="index-empty mono" data-empty hidden>No notes match those filters.</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .archive-head {
+    padding-block: var(--space-5) var(--space-4);
+  }
+
+  .archive-back {
+    display: inline-block;
+    margin-bottom: var(--space-4);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dusk);
+    text-decoration: none;
+  }
+
+  .archive-back:hover {
+    color: var(--blossom);
+  }
+
+  .archive-title {
+    font-size: var(--step-3);
+    margin: 0 0 var(--space-4);
+  }
+
+  .archive-search {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    max-width: 30rem;
+    border: var(--hairline) solid var(--branch);
+    border-radius: 2px;
+    background: var(--bark);
+    padding: 0 var(--space-2);
+  }
+
+  .archive-search:focus-within {
+    border-color: var(--blossom);
+  }
+
+  .archive-search-icon {
+    flex: 0 0 auto;
+    color: var(--dusk);
+  }
+
+  .archive-search-input {
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--petal);
+    font-family: var(--font-body);
+    /* 16px minimum, or iOS Safari zooms the page on focus. */
+    font-size: var(--step-0);
+    padding: 0.6rem 0;
+  }
+
+  .archive-search-input::placeholder {
+    color: var(--dusk);
+    opacity: 1;
+  }
+
+  .archive-search-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  .archive-search-clear {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    background: none;
+    border: none;
+    border-radius: 2px;
+    color: var(--dusk);
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .archive-search-clear[hidden] {
+    display: none;
+  }
+
+  .archive-search-clear:hover {
+    color: var(--blossom);
+  }
+
+  .archive-status {
+    margin: var(--space-2) 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+  }
+
+  .index {
+    padding-bottom: var(--space-5);
+  }
+
+  .index-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+
+  .filter-trigger {
+    background: none;
+    border: var(--hairline) solid var(--branch);
+    border-radius: 2px;
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.35rem 0.7rem;
+    cursor: pointer;
+  }
+
+  .filter-trigger:hover {
+    color: var(--blossom);
+    border-color: var(--stem);
+  }
+
+  .index-count {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    color: var(--dusk);
+  }
+
+  /* The full view: every note as a card, auto-fitting the column count. */
+  .index-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+    gap: var(--space-3);
+    align-items: stretch;
+  }
+
+  .index-empty {
+    padding: var(--space-5) 0;
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+  }
+
+  @media (min-width: 60rem) {
+    .archive-head {
+      padding-block: var(--space-6) var(--space-4);
+    }
+
+    .archive-title {
+      font-size: var(--step-4);
+    }
+
+    .index {
+      display: grid;
+      grid-template-columns: var(--rail-width) minmax(0, 1fr);
+      gap: var(--space-5);
+      align-items: start;
+      padding-bottom: var(--space-6);
+    }
+
+    /* The rail is the filter UI on desktop; the trigger is mobile-only. */
+    .filter-trigger {
+      display: none;
+    }
+
+    .index-bar {
+      justify-content: flex-end;
+    }
+  }
+</style>
