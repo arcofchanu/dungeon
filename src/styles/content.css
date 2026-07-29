@@ -81,6 +81,88 @@ pre[data-payload]::before {
   padding: 0.2em 0.6em;
 }
 
+/*
+ * --- Copy button on code fences ---
+ *
+ * The wrapper exists so the button can be positioned against the fence without
+ * being a child of the scroll container — inside `pre`, which is `overflow-x:
+ * auto`, the button slides away the moment a long line is scrolled.
+ */
+.code-block {
+  position: relative;
+}
+
+.code-copy {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  z-index: 4; /* above a payload label and a fence redaction bar */
+
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  padding: 0;
+
+  font-family: var(--font-mono);
+  color: var(--dusk);
+  background: var(--bark);
+  border: var(--hairline) solid var(--branch);
+  border-radius: 0; /* §7.7 — no exceptions */
+  cursor: pointer;
+
+  /* Hidden until the block is hovered or the button itself is focused. Opacity
+     rather than `display`, so the control stays in the tab order and a keyboard
+     user can reach it without a pointer ever touching the page. */
+  opacity: 0;
+  transition:
+    opacity var(--dur-fade) linear,
+    color var(--dur-fade) linear,
+    border-color var(--dur-fade) linear;
+}
+
+.code-block:hover .code-copy,
+.code-copy:focus-visible,
+.code-copy[data-state] {
+  opacity: 1;
+}
+
+.code-copy:hover {
+  color: var(--petal);
+  border-color: var(--stem);
+}
+
+.code-copy[data-state='copied'] {
+  color: var(--blossom);
+  border-color: var(--blossom);
+}
+
+.code-copy[data-state='failed'] {
+  color: var(--fallen);
+  border-color: var(--fallen);
+}
+
+/* Touch and coarse pointers never fire hover, so the button would be
+   unreachable. Show it permanently there instead. */
+@media (hover: none) {
+  .code-copy {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-copy {
+    transition: none;
+  }
+}
+
+/* A fence covered whole (```lang redact) still holds its payload in the DOM.
+   Offering a copy button over the bar hands it over in one click and makes the
+   redaction theatre — the control appears only once the block is revealed. */
+pre[data-fence-redacted]:not(.is-revealed):not(.is-fading) + .code-copy {
+  display: none;
+}
+
 /* --- Wikilinks (§6) --- */
 .wikilink {
   text-decoration-style: dotted;

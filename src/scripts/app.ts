@@ -3,6 +3,7 @@
  * bundle stays inside the §11 budget: Pagefind loads on first search, GSAP on
  * first note/index paint under `prefers-reduced-motion: no-preference`.
  */
+import { initCopyCode } from './copy-code';
 import { initFilters } from './filters';
 import { initGrove } from './grove';
 import { initPwa } from './pwa';
@@ -14,6 +15,7 @@ initFilters();
 initGrove();
 initSearch();
 initPwa();
+initCopyCode();
 
 // Motion is the last thing to load and the first thing to skip (§7.8).
 const wantsMotion = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
