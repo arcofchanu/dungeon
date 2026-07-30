@@ -1,3 +1,8 @@
+---
+title: "HuggingFace GSA public IPI dataset"
+date: 2026-07-30
+tags: [dataset, IPI]
+---
 # Qwen — Open-Source-Only Attack Set
 
 A curated collection of **95 adversarial prompt-injection payloads** spanning **28 target behaviors**, drawn from the open-source subset of the Qwen attack dataset. Each entry is a raw attack string as it would be delivered to an agent/tool-augmented model. Payloads are reproduced verbatim inside code fences.
