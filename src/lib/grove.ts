@@ -206,6 +206,50 @@ export function groveAnchors(count: number): Anchor[] {
   return out;
 }
 
+/**
+ * Petals still in the air. Pure decoration, never interactive — every field is
+ * consumed as a custom property by the keyframes on the index, so the motion is
+ * CSS-only and stops dead under `prefers-reduced-motion`.
+ *
+ * `wind` is positive on every petal on purpose: one prevailing direction is
+ * what reads as wind. The side-to-side is the keyframe curve overshooting and
+ * falling back along that drift, not a change of direction.
+ *
+ * The delays are negative so the fall is already under way on first paint —
+ * otherwise the canopy sits still for the first ten seconds of a visit.
+ */
+export interface Drift {
+  x: number;
+  y: number;
+  /** Total downwind travel over one fall, in user units. */
+  wind: number;
+  /** Vertical travel; `y + fall` lands on the drift of fallen petals. */
+  fall: number;
+  scale: number;
+  /** Seconds for one fall, and for one flutter of the petal about its centre. */
+  duration: number;
+  flutter: number;
+  /** Negative — seconds already elapsed at load. */
+  delay: number;
+  /** Peak opacity. Tied loosely to scale, so the small ones read as further. */
+  opacity: number;
+}
+
+export const DRIFT: readonly Drift[] = [
+  { x: 212, y: 78, wind: 30, fall: 228, scale: 0.56, duration: 15, flutter: 4.4, delay: -11, opacity: 0.34 },
+  { x: 274, y: 76, wind: 15, fall: 230, scale: 0.54, duration: 18, flutter: 5.6, delay: -16, opacity: 0.32 },
+  { x: 240, y: 82, wind: 22, fall: 226, scale: 0.6, duration: 17, flutter: 5.2, delay: -4, opacity: 0.36 },
+  { x: 296, y: 84, wind: 18, fall: 222, scale: 0.44, duration: 13, flutter: 3.8, delay: -7, opacity: 0.26 },
+  { x: 320, y: 92, wind: 16, fall: 216, scale: 0.52, duration: 16, flutter: 4.9, delay: -13, opacity: 0.3 },
+  { x: 168, y: 96, wind: 24, fall: 212, scale: 0.5, duration: 11, flutter: 3.1, delay: -2, opacity: 0.3 },
+  { x: 258, y: 104, wind: 20, fall: 204, scale: 0.4, duration: 12, flutter: 2.9, delay: -9, opacity: 0.24 },
+  { x: 150, y: 112, wind: 34, fall: 196, scale: 0.46, duration: 14, flutter: 3.4, delay: -5, opacity: 0.28 },
+  { x: 306, y: 118, wind: 19, fall: 190, scale: 0.48, duration: 15, flutter: 4.1, delay: -14, opacity: 0.28 },
+  { x: 186, y: 120, wind: 26, fall: 188, scale: 0.38, duration: 10, flutter: 2.6, delay: -6, opacity: 0.22 },
+  { x: 226, y: 130, wind: 28, fall: 178, scale: 0.42, duration: 13, flutter: 3.6, delay: -10, opacity: 0.26 },
+  { x: 160, y: 142, wind: 32, fall: 166, scale: 0.44, duration: 12, flutter: 3.2, delay: -8, opacity: 0.26 },
+];
+
 /** Petals already on the ground — pure decoration, never interactive. */
 export const FALLEN: readonly { x: number; y: number; scale: number; rotate: number }[] = [
   { x: 176, y: 300, scale: 0.5, rotate: 18 },

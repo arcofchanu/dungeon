@@ -257,7 +257,22 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
   }
 
   @media (min-width: 60rem) {
+    /*
+     * A note reads wide on desktop. Three things have to move together for that
+     * to work, because each one is a separate ceiling on the prose:
+     *
+     *   --measure       caps the article, every `.prose > *`, and grid column 2
+     *   max-width       overrides `.wrap`'s 72rem, which binds before --measure
+     *   padding-inline  drops from --space-4 to --space-3 (§ the ask: less edge)
+     *
+     * Raising only one of them does nothing visible — whichever is still small
+     * keeps winning. 92ch is past the 68ch reading optimum by design; it is the
+     * single number to turn if the lines ever feel too long.
+     */
     .note-wrap {
+      --measure: 92ch;
+      max-width: 84rem;
+      padding-inline: var(--space-3);
       display: grid;
       /* Column 2 is capped at the measure so the branch+prose pair centres as
          a unit — with `1fr` the prose hugged the left and left a dead gutter. */
@@ -268,6 +283,14 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
 
     .note-title {
       font-size: var(--step-4);
+    }
+  }
+
+  /* Enough screen to spend some of it on the measure rather than the margins. */
+  @media (min-width: 90rem) {
+    .note-wrap {
+      --measure: 106ch;
+      max-width: 96rem;
     }
   }
 </style>

@@ -12,7 +12,7 @@
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { allNotes, formatDate } from '../lib/notes';
-import { BOUGH_DS, FALLEN, GROUND_Y, TRUNK_D, VIEW_BOX, groveAnchors } from '../lib/grove';
+import { BOUGH_DS, DRIFT, FALLEN, GROUND_Y, TRUNK_D, VIEW_BOX, groveAnchors } from '../lib/grove';
 
 const notes = await allNotes();
 
@@ -22,8 +22,6 @@ const anchors = groveAnchors(notes.length);
 const blossoms = notes.map((note, index) => ({
   note,
   anchor: anchors[index],
-  /* The three newest sit at full --blossom; the rest are --stem. */
-  fresh: index < 3,
   /* Read by the dialog — the same mono line the cards carry (§7.4). */
   meta: `${formatDate(note.date)} · ${note.readingMinutes} min`,
 }));
@@ -86,10 +84,27 @@ const caption = `${notes.length} ${noteWord} on the tree — pick a blossom to p
           }
         </g>
 
+        {/*
+          Petals on the wind. Behind the blossoms and inert — decoration must
+          never sit between a pointer and a link.
+        */}
+        <g class="grove-drift-field" aria-hidden="true">
+          {
+            DRIFT.map((petal) => (
+              <g
+                class="grove-drift"
+                style={`--x:${petal.x}; --y:${petal.y}; --wind:${petal.wind}; --fall:${petal.fall}; --sc:${petal.scale}; --dur:${petal.duration}s; --flutter:${petal.flutter}s; --delay:${petal.delay}s; --peak:${petal.opacity}`}
+              >
+                <use href="#yz-grove-petal" />
+              </g>
+            ))
+          }
+        </g>
+
         {
-          blossoms.map(({ note, anchor, fresh, meta }) => (
+          blossoms.map(({ note, anchor, meta }) => (
             <a
-              class:list={['grove-bloom', fresh && 'is-fresh']}
+              class="grove-bloom"
               href={`/notes/${note.slug}/`}
               data-title={note.title}
               data-meta={meta}
@@ -376,40 +391,121 @@ const caption = `${notes.length} ${noteWord} on the tree — pick a blossom to p
     fill: var(--branch);
   }
 
+  /* --- petals on the wind --- */
+
+  /*
+   * Two composed animations on two elements, because they have different
+   * periods: the outer <g> carries the fall (position), the <use> inside it
+   * carries the flutter (rotation). One element cannot hold both without the
+   * shorter cycle stamping over the longer one's transform.
+   */
+  .grove-drift-field {
+    pointer-events: none;
+  }
+
+  .grove-drift {
+    /* Off-screen until the animation places it — a petal must not flash at the
+       viewBox origin between first paint and the first frame. */
+    opacity: 0;
+    animation: yz-drift-fall var(--dur) linear var(--delay) infinite;
+  }
+
+  .grove-drift use {
+    fill: var(--blossom);
+    /* Rotate about the petal's own centre, not the viewBox origin. */
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: yz-drift-flutter var(--flutter) ease-in-out var(--delay) infinite;
+  }
+
+  /*
+   * x rides the wind unevenly — 0.42 → 0.22 → 0.78 → 0.58 → 1 of the total
+   * drift — so the petal slips sideways in gusts instead of tracking a straight
+   * diagonal. y is monotonic: it only ever falls.
+   */
+  @keyframes yz-drift-fall {
+    0% {
+      transform: translate(calc(var(--x) * 1px), calc(var(--y) * 1px));
+      opacity: 0;
+    }
+    12% {
+      opacity: var(--peak);
+    }
+    20% {
+      transform: translate(
+        calc((var(--x) + var(--wind) * 0.42) * 1px),
+        calc((var(--y) + var(--fall) * 0.2) * 1px)
+      );
+    }
+    40% {
+      transform: translate(
+        calc((var(--x) + var(--wind) * 0.22) * 1px),
+        calc((var(--y) + var(--fall) * 0.4) * 1px)
+      );
+    }
+    60% {
+      transform: translate(
+        calc((var(--x) + var(--wind) * 0.78) * 1px),
+        calc((var(--y) + var(--fall) * 0.6) * 1px)
+      );
+    }
+    80% {
+      transform: translate(
+        calc((var(--x) + var(--wind) * 0.58) * 1px),
+        calc((var(--y) + var(--fall) * 0.8) * 1px)
+      );
+      opacity: var(--peak);
+    }
+    100% {
+      transform: translate(
+        calc((var(--x) + var(--wind)) * 1px),
+        calc((var(--y) + var(--fall)) * 1px)
+      );
+      opacity: 0;
+    }
+  }
+
+  @keyframes yz-drift-flutter {
+    0%,
+    100% {
+      transform: rotate(-38deg) scale(var(--sc));
+    }
+    50% {
+      transform: rotate(46deg) scale(var(--sc));
+    }
+  }
+
   /* --- the blossoms --- */
   .grove-hit {
     fill: transparent;
   }
 
+  /* Every note is one blossom and they are all the same blossom — recency is
+     carried by position on the tree (newest at the tips), not by colour. */
   .grove-petals {
-    fill: var(--stem);
+    fill: var(--blossom);
   }
 
   .grove-centre {
     fill: var(--petal);
-    opacity: 0.6;
-  }
-
-  .grove-bloom.is-fresh .grove-petals {
-    fill: var(--blossom);
-  }
-
-  .grove-bloom.is-fresh .grove-centre {
     opacity: 1;
   }
 
-  /* Colour only — §7.7 rules out the transform-on-hover reflex. */
+  /*
+   * With the canopy at a single colour, hover can no longer *be* --blossom.
+   * The centre inverts and the petals lift to --petal instead — colour only,
+   * since §7.7 rules out the transform-on-hover reflex.
+   */
   .grove-bloom:hover .grove-petals,
   .grove-bloom:focus-visible .grove-petals,
   .grove-bloom.is-open .grove-petals {
-    fill: var(--blossom);
+    fill: var(--petal);
   }
 
   .grove-bloom:hover .grove-centre,
   .grove-bloom:focus-visible .grove-centre,
   .grove-bloom.is-open .grove-centre {
-    fill: var(--yozakura);
-    opacity: 1;
+    fill: var(--blossom);
   }
 
   .grove-bloom:focus-visible {
@@ -574,6 +670,18 @@ const caption = `${notes.length} ${noteWord} on the tree — pick a blossom to p
     }
 
     .grove-caption {
+      display: none;
+    }
+  }
+
+  /*
+   * The drift is motion and nothing else — there is no information in it, so
+   * under reduced motion it goes away entirely rather than freezing mid-fall
+   * (a still petal suspended in the canopy reads as a rendering bug). The
+   * petals already on the ground carry the same idea, motionless.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .grove-drift-field {
       display: none;
     }
   }
