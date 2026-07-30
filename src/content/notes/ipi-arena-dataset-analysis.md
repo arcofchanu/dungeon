@@ -1,6 +1,9 @@
+---
 title: "IPI Arena Attacks — Technique & Defense-Class Analysis"
 date: 2026-07-30
 tags: [prompt-injection, indirect-prompt-injection, red-teaming, llm-security, agent-security, attack-taxonomy, defense-classes]
+
+---
 IPI Arena Attacks — Technique & Defense-Class Analysis
 Analytical teardown of the ipi_arena_attacks dataset (95 attack samples across ~35 behaviors, 3 settings: tool use, coding, computer use). This report extracts the techniques, the defense classes they target, and what transfers — not the payloads. The goal is the pattern layer: the reusable understanding that survives roster changes.
 1. Executive read
