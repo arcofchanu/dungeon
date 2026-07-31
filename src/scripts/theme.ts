@@ -18,6 +18,11 @@ export function initTheme() {
   };
 
   toggle.addEventListener('click', () => {
+    /* The toggle is a hanging lantern, and a lantern can be swung. src/scripts/
+       lantern.ts marks the click that ends a drag; that is a push, not a
+       choice, and the lights stay as they are. */
+    if (toggle.dataset.lanternDrag !== undefined) return;
+
     const next = currentTheme() === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
     try {

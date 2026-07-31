@@ -16,6 +16,12 @@
   --branch: #3a2e42; /* --bark lightened; unbloomed branch, dividers */
   --stem: #7a4a5c; /* --fallen desaturated; tag borders, bloomed branch */
 
+  /* The lantern that carries the theme toggle: lit after dark, plain paper by
+     day. Two properties rather than two rules, so the header markup never has
+     to know which theme is on. */
+  --lantern-paper: var(--blossom);
+  --lantern-glow: 0.6;
+
   /* --- Type faces (§7.3) --- */
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, serif;
   --font-body: 'Newsreader Variable', 'Newsreader', Georgia, serif;
@@ -91,6 +97,8 @@
   --fallen: #9e3b5c;
   --branch: #d9c7d0;
   --stem: #c58ea1;
+  --lantern-paper: var(--bark);
+  --lantern-glow: 0;
   color-scheme: light;
 }
 
@@ -104,6 +112,8 @@
     --fallen: #9e3b5c;
     --branch: #d9c7d0;
     --stem: #c58ea1;
+    --lantern-paper: var(--bark);
+    --lantern-glow: 0;
     color-scheme: light;
   }
 }

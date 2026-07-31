@@ -4,15 +4,19 @@
  * first note/index paint under `prefers-reduced-motion: no-preference`.
  */
 import { initCopyCode } from './copy-code';
+import { initDial } from './dial';
 import { initFilters } from './filters';
 import { initGrove } from './grove';
+import { initLantern } from './lantern';
 import { initPwa } from './pwa';
 import { initSearch } from './search';
 import { initTheme } from './theme';
 
 initTheme();
+initLantern();
 initFilters();
 initGrove();
+initDial();
 initSearch();
 initPwa();
 initCopyCode();

@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Branch from '../../components/Branch.astro';
+import PetalDial from '../../components/PetalDial.astro';
 import { allNotes, backlinkMap, formatDate, NAMESPACES } from '../../lib/notes';
 import type { Note } from '../../lib/notes';
 
@@ -137,6 +138,10 @@ const freeTags = note.tags.filter((t) => t.namespace === null);
       }
     </article>
   </div>
+
+  {/* Outside the article on purpose: it is navigation, not the note, so it
+      stays out of the Pagefind body and out of the prose grid. */}
+  <PetalDial current={note.slug} />
 </BaseLayout>
 
 <style>

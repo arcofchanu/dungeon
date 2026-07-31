@@ -7,6 +7,7 @@ import '../styles/tokens.css';
 import '../styles/global.css';
 import '../styles/content.css';
 
+import Backdrop from '../components/Backdrop.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SearchOverlay from '../components/SearchOverlay.astro';
 
@@ -17,9 +18,20 @@ interface Props {
   path?: string;
   /** Note pages opt into the branch/prose grid; the index does not. */
   bodyClass?: string;
+  /**
+   * The live scene behind the page. On by default and strongest on the home
+   * page (see Backdrop.astro); a route that wants a plain ground opts out.
+   */
+  backdrop?: boolean;
 }
 
-const { title, description, path = Astro.url.pathname, bodyClass = '' } = Astro.props;
+const {
+  title,
+  description,
+  path = Astro.url.pathname,
+  bodyClass = '',
+  backdrop = true,
+} = Astro.props;
 
 const siteName = 'Yozakura';
 const fullTitle = path === '/' ? `${siteName} — red-teaming archive` : `${title} · ${siteName}`;
@@ -64,6 +76,8 @@ const ogImage = new URL('/og-default.png', Astro.site ?? Astro.url).href;
   </head>
 
   <body class={bodyClass}>
+    {/* Before <main> in source as well as in paint order — see global.css. */}
+    {backdrop && <Backdrop />}
     <a class="skip-link" href="#main">Skip to content</a>
     <SiteHeader />
     <main id="main" tabindex="-1">
@@ -71,8 +85,9 @@ const ogImage = new URL('/og-default.png', Astro.site ?? Astro.url).href;
     </main>
     <footer class="site-footer">
       <div class="wrap">
+        {/* The wordmark is the way home now that the header bar is gone. */}
         <p class="mono">
-          Yozakura · a personal research archive · <a href="/notes/">all notes</a>
+          <a href="/">Yozakura</a> · a personal research archive · <a href="/notes/">all notes</a>
         </p>
       </div>
     </footer>

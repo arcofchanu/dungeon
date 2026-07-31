@@ -1,123 +1,150 @@
 ---
-// Wordmark, search trigger, theme toggle. No nav — the archive has two routes
-// and the filter rail carries the navigation load.
+/*
+ * No bar. The header is a lantern hanging in the top corner and nothing else —
+ * no rule, no ground, no wordmark, no search button. It still holds the top of
+ * the page open (`--header-h`), so the branch rail and the heading scroll
+ * offsets that measure against it are unchanged; it simply has nothing in it
+ * to draw.
+ *
+ * What left with the bar: the wordmark's link home, which is now the one in the
+ * footer, and the search button, which was a second way into an overlay that
+ * ⌘K/Ctrl+K still opens. The home page and /notes/ carry their own search
+ * fields, so the two routes where searching is the point are unaffected.
+ */
 ---
 
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="wordmark" href="/">Yozakura</a>
-
-    <div class="header-actions">
-      <button type="button" class="search-trigger" data-search-open aria-keyshortcuts="Meta+K Control+K">
-        <span class="search-trigger-label">Search</span>
-        <kbd class="mono">⌘K</kbd>
-      </button>
-
-      <button
-        type="button"
-        class="theme-toggle"
-        data-theme-toggle
-        aria-label="Toggle light and dark theme"
-      >
-        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-          <path
-            d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 1.4v11.2a5.6 5.6 0 0 1 0-11.2Z"
-            fill="currentColor"></path>
+    {/*
+      The theme toggle is a paper lantern hung from the very top of the page. It
+      is still a button with a label and a pressed state — the swing is a
+      decoration on a control, not a control made of decoration.
+      src/scripts/lantern.ts gives it a pendulum: it takes a push from a click,
+      a brush of the pointer, a drag, or the page scrolling under it.
+    */}
+    <button type="button" class="lantern" data-theme-toggle data-lantern>
+      <span class="lantern-swing" data-lantern-swing aria-hidden="true">
+        <svg class="lantern-svg" viewBox="0 0 26 51" width="26" height="51" focusable="false">
+          <line class="lantern-line" x1="13" y1="0" x2="13" y2="17.2"></line>
+          <rect class="lantern-fitting" x="8.2" y="16.4" width="9.6" height="2.9"></rect>
+          <ellipse class="lantern-paper" cx="13" cy="30" rx="9.4" ry="10.8"></ellipse>
+          <g class="lantern-ribs">
+            <line x1="4.4" y1="26" x2="21.6" y2="26"></line>
+            <line x1="3.7" y1="30" x2="22.3" y2="30"></line>
+            <line x1="4.4" y1="34" x2="21.6" y2="34"></line>
+          </g>
+          <circle class="lantern-glow" cx="13" cy="30" r="2.9"></circle>
+          <rect class="lantern-fitting" x="9.4" y="40.3" width="7.2" height="2.5"></rect>
+          <line class="lantern-line" x1="13" y1="42.6" x2="13" y2="46.4"></line>
+          <circle class="lantern-knot" cx="13" cy="47.7" r="1.5"></circle>
         </svg>
-      </button>
-    </div>
+      </span>
+      <span class="visually-hidden">Toggle light and dark theme</span>
+    </button>
   </div>
 </header>
 
 <style>
+  /*
+   * Sticky and transparent: the lantern stays in the corner while the page
+   * moves under it, which is the whole premise of the scroll nudge in
+   * src/scripts/lantern.ts. Nothing here paints, so there is no bar — text
+   * passes behind the lantern rather than under a band of --yozakura.
+   */
   .site-header {
-    border-bottom: var(--hairline) solid var(--branch);
     position: sticky;
     top: 0;
     z-index: 20;
-    background: var(--yozakura);
+    /* The lantern hangs past the bottom of this box and must not be cut. */
+    pointer-events: none;
   }
 
   .header-inner {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-3);
+    justify-content: flex-end;
     min-height: var(--header-h);
   }
 
-  .wordmark {
-    font-family: var(--font-display);
-    font-size: var(--step-1);
-    font-weight: 600;
-    font-variation-settings:
-      'SOFT' var(--fraunces-soft),
-      'WONK' var(--fraunces-wonk),
-      'opsz' 40;
-    color: var(--petal);
-    text-decoration: none;
-    letter-spacing: 0.01em;
-  }
-
-  .wordmark:hover {
-    color: var(--blossom);
-  }
-
-  .header-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-1);
-  }
-
-  .search-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
+  /*
+   * The lantern hangs from the top of the page rather than sitting on a
+   * baseline, so the button is pinned to the top of the header and the swing
+   * element to the top of the button. The SVG is 51 tall against a 52px header
+   * on mobile — the tassel comes to rest just past the header's own height,
+   * which is what makes it read as hanging into the page.
+   */
+  .lantern {
+    position: relative;
+    /* The width the toggle had when it sat in the bar, so removing the bar
+       left the lantern hanging in exactly the same place. */
+    width: 2.4rem;
+    height: 3.2rem;
     background: none;
-    border: var(--hairline) solid var(--branch);
-    border-radius: 2px;
-    color: var(--dusk);
-    font-family: var(--font-mono);
-    font-size: var(--step--1);
-    padding: 0.35rem var(--space-2);
-    cursor: pointer;
-  }
-
-  .search-trigger:hover {
-    color: var(--blossom);
-    border-color: var(--stem);
-  }
-
-  .search-trigger-label {
-    display: none;
-  }
-
-  .search-trigger kbd {
-    font: inherit;
-    color: var(--dusk);
-  }
-
-  .theme-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 2rem;
-    height: 2rem;
-    background: none;
-    border: var(--hairline) solid transparent;
-    border-radius: 2px;
-    color: var(--dusk);
-    cursor: pointer;
+    border: none;
     padding: 0;
+    cursor: pointer;
+    pointer-events: auto;
+    /* The pendulum owns the gesture; a drag on it must not scroll the page. */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .theme-toggle:hover {
-    color: var(--blossom);
+  .lantern-swing {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    translate: -50% 0;
+    /* The pivot is the top of the cord, which is the top of this box. */
+    transform-origin: 50% 0;
+    line-height: 0;
   }
 
-  @media (min-width: 40rem) {
-    .search-trigger-label {
-      display: inline;
-    }
+  .lantern-svg {
+    display: block;
+    overflow: visible;
+  }
+
+  .lantern-line,
+  .lantern-ribs line {
+    stroke: var(--stem);
+    stroke-width: 1.1;
+    stroke-linecap: round;
+  }
+
+  .lantern-ribs line {
+    stroke-width: 0.9;
+    opacity: 0.55;
+  }
+
+  .lantern-fitting,
+  .lantern-knot {
+    fill: var(--stem);
+  }
+
+  /*
+   * --lantern-paper and --lantern-glow are the theme's own answer to "is it
+   * night?" (tokens.css): lit blossom paper after dark, plain --bark paper with
+   * the flame out by day. The stroke is what keeps the daytime lantern visible
+   * once its paper matches the page behind it.
+   */
+  .lantern-paper {
+    fill: var(--lantern-paper);
+    stroke: var(--stem);
+    stroke-width: 1;
+  }
+
+  .lantern-glow {
+    fill: var(--petal);
+    opacity: var(--lantern-glow);
+  }
+
+  .lantern:hover .lantern-paper,
+  .lantern:focus-visible .lantern-paper {
+    stroke: var(--blossom);
+  }
+
+  .lantern:focus-visible {
+    outline: 2px solid var(--blossom);
+    outline-offset: -2px;
+    border-radius: 2px;
   }
 </style>

@@ -1,0 +1,528 @@
+---
+/*
+ * The petal dial — every note as one petal on a flower at the right edge.
+ *
+ * Closed, it is a small blossom cut in half by the edge of the screen. Opened,
+ * the petals fan out around it: one per note, the one facing into the page is
+ * the selected one, and a card beside it carries that note's name. Turning the
+ * flower — drag it, scroll it, arrow-key it, or click any petal — brings a
+ * different note round to the front. The petal that is already selected is a
+ * plain link, so a second click on it is the navigation.
+ *
+ * It is a <details> on purpose: the open/close is native, so with JS off the
+ * flower still opens, the petals are still real links with real names, and the
+ * card still names the note being read. src/scripts/dial.ts adds the turning.
+ */
+import { allNotes, formatDate } from '../lib/notes';
+
+interface Props {
+  /** Slug of the note being read — the petal the dial starts on. */
+  current: string;
+}
+
+const { current } = Astro.props;
+
+/*
+ * Past a dozen the petals start overlapping and the ring stops being readable,
+ * so the dial carries the newest twelve and hands the rest to /notes/. The note
+ * being read is always on the ring, even when it has aged out of that twelve —
+ * a dial that cannot show you where you are is worse than no dial.
+ */
+const MAX_PETALS = 12;
+
+const notes = await allNotes();
+let ring = notes.slice(0, MAX_PETALS);
+if (!ring.some((note) => note.slug === current)) {
+  const self = notes.find((note) => note.slug === current);
+  if (self) ring = [...ring.slice(0, MAX_PETALS - 1), self];
+}
+
+const petals = ring.map((note) => ({
+  slug: note.slug,
+  title: note.title,
+  href: `/notes/${note.slug}/`,
+  /* The same mono line the cards and the blossom preview carry (§7.4). */
+  meta: `${formatDate(note.date)} · ${note.readingMinutes} min`,
+  isCurrent: note.slug === current,
+}));
+
+const startIndex = Math.max(
+  petals.findIndex((petal) => petal.isCurrent),
+  0,
+);
+const start = petals[startIndex];
+const step = petals.length > 0 ? 360 / petals.length : 360;
+/* Petal `i` sits at `i * step`; this turn brings `startIndex` round to 180°,
+   the slot that faces the card. Server-rendered so the no-JS dial opens
+   already pointing at the right note. */
+const turn = 180 - startIndex * step;
+const hasMore = notes.length > petals.length;
+---
+
+{
+  petals.length > 0 && (
+    <details class="dial" data-dial data-start={startIndex}>
+      <summary class="dial-tab" title="Browse notes">
+        <svg class="dial-defs" width="0" height="0" aria-hidden="true" focusable="false">
+          <defs>
+            <path
+              id="yz-dial-petal"
+              d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z"
+            />
+            <g id="yz-dial-bloom">
+              <g transform="rotate(0)">
+                <use href="#yz-dial-petal" />
+              </g>
+              <g transform="rotate(72)">
+                <use href="#yz-dial-petal" />
+              </g>
+              <g transform="rotate(144)">
+                <use href="#yz-dial-petal" />
+              </g>
+              <g transform="rotate(216)">
+                <use href="#yz-dial-petal" />
+              </g>
+              <g transform="rotate(288)">
+                <use href="#yz-dial-petal" />
+              </g>
+            </g>
+          </defs>
+        </svg>
+
+        <svg class="dial-hub" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false">
+          <use class="dial-hub-petals" href="#yz-dial-bloom" />
+          <circle class="dial-hub-centre" r="2" />
+        </svg>
+        <span class="visually-hidden">Browse notes</span>
+      </summary>
+
+      <div class="dial-panel" data-dial-panel>
+        {/* Polite, not assertive: turning the dial is the reader's own action,
+            and the petals carry their names for anyone tabbing through. */}
+        <div class="dial-card" aria-live="polite">
+          <p class="dial-eyebrow mono" data-dial-eyebrow>
+            {start.isCurrent ? 'You are reading' : `Note ${startIndex + 1} of ${petals.length}`}
+          </p>
+          <p class="dial-meta mono" data-dial-meta>
+            {start.meta}
+          </p>
+          <p class="dial-title" data-dial-title>
+            {start.title}
+          </p>
+
+          <a class="dial-open mono" href={start.href} data-dial-open>
+            <span data-dial-open-label>{start.isCurrent ? 'This note' : 'Open note'}</span>
+            <svg class="dial-arrow" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+              <path
+                d="M2.5 8h10M8.5 4l4 4-4 4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </a>
+
+          {hasMore && (
+            <a class="dial-all mono" href="/notes/">
+              All {notes.length} notes
+            </a>
+          )}
+        </div>
+
+        <ul class="dial-ring" data-dial-ring style={`--step:${step}deg; --turn:${turn}deg`}>
+          {petals.map((petal, index) => (
+            <li class="dial-petal" style={`--i:${index}`}>
+              <a
+                class:list={['dial-link', { 'is-active': index === startIndex }]}
+                href={petal.href}
+                title={petal.title}
+                draggable="false"
+                data-dial-item
+                data-title={petal.title}
+                data-meta={petal.meta}
+                data-current={petal.isCurrent ? '' : undefined}
+              >
+                <svg class="dial-petal-svg" viewBox="-6 -12 12 12" aria-hidden="true">
+                  <use href="#yz-dial-petal" />
+                </svg>
+                <span class="visually-hidden">{petal.title}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
+  )
+}
+
+<style>
+  /* ---------------------------------------------------------------- */
+  /* The dial                                                          */
+  /* ---------------------------------------------------------------- */
+
+  /*
+   * Geometry lives in four properties and everything else is derived from
+   * them, so the whole dial resizes by changing these four:
+   *
+   *   --hub    the closed flower; half of it hangs past the right edge
+   *   --pet    one petal's box, and its tap target
+   *   --r      ring radius, hub centre to petal centre
+   *   --edge   breathing room between the open ring and the screen edge
+   *
+   * `right: -hub/2` puts the hub's centre exactly on the viewport edge — which
+   * is what makes it read as half a flower — and, being fixed, it cannot widen
+   * the document or add a scrollbar the way an absolute box would.
+   */
+  .dial {
+    --hub: 3.25rem;
+    --pet: 1.75rem;
+    --r: 4.2rem;
+    --edge: 0.75rem;
+
+    position: fixed;
+    top: 50%;
+    right: calc(var(--hub) / -2);
+    width: var(--hub);
+    height: var(--hub);
+    /* Over the branch rail (10) and the page, under the filter sheet (40) and
+       the search overlay (60). */
+    z-index: 30;
+    translate: 0 -50%;
+    transition: translate var(--dur-reveal) var(--ease-out);
+  }
+
+  /* Open: slide left far enough that the whole ring clears the edge. */
+  .dial[open] {
+    translate: calc(-1 * (var(--edge) + var(--r) + var(--pet) / 2)) -50%;
+  }
+
+  .dial-tab {
+    display: block;
+    width: var(--hub);
+    height: var(--hub);
+    cursor: pointer;
+    /* Both spellings — Safari still ships the pseudo-element. */
+    list-style: none;
+  }
+
+  .dial-tab::-webkit-details-marker {
+    display: none;
+  }
+
+  .dial-tab:focus-visible {
+    outline: 2px solid var(--blossom);
+    outline-offset: 2px;
+    border-radius: 50%;
+  }
+
+  .dial-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+  }
+
+  .dial-hub {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    /* Slow enough to be weather rather than a spinner. */
+    animation: yz-dial-turn 32s linear infinite;
+  }
+
+  .dial-hub-petals {
+    fill: var(--stem);
+  }
+
+  .dial-hub-centre {
+    fill: var(--blossom);
+  }
+
+  .dial-tab:hover .dial-hub-petals,
+  .dial[open] .dial-hub-petals {
+    fill: var(--blossom);
+  }
+
+  .dial[open] .dial-hub-centre {
+    fill: var(--petal);
+  }
+
+  @keyframes yz-dial-turn {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /*
+   * The panel is absolute and exactly covers the hub, so `.dial`'s own box
+   * stays hub-sized whether it is open or shut — that is what keeps the
+   * geometry above honest. Its children hang outside it and are the only
+   * things that take pointer events, so the hub underneath stays clickable.
+   */
+  .dial-panel {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    animation: yz-dial-open var(--dur-reveal) var(--ease-out) both;
+  }
+
+  @keyframes yz-dial-open {
+    from {
+      opacity: 0;
+      scale: 0.86;
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+    }
+  }
+
+  /* --- the card --- */
+
+  /*
+   * `50%` of the panel is the hub centre, so every offset here is written as
+   * "the hub centre, plus the ring, plus a gap" — the card can never end up
+   * under a petal whatever the four geometry properties are set to.
+   *
+   * A phone has no room for a card *beside* the ring: at 320px the ring alone
+   * takes half the width. So the small screen stacks it above the flower and
+   * only ≥30rem puts it back on the left. Same object language as the blossom
+   * preview on the home page — hairline on --bark, hard corners, no shadow.
+   */
+  .dial-card {
+    position: absolute;
+    bottom: calc(50% + var(--r) + var(--pet) / 2 + var(--space-2));
+    right: calc(50% - var(--r) - var(--pet) / 2);
+    width: min(15rem, 62vw);
+    pointer-events: auto;
+    background: var(--bark);
+    border: var(--hairline) solid var(--stem);
+    border-radius: 2px;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+  }
+
+  @media (min-width: 30rem) {
+    .dial-card {
+      bottom: auto;
+      top: 50%;
+      right: calc(50% + var(--r) + var(--pet) / 2 + var(--space-2));
+      translate: 0 -50%;
+      width: min(13rem, 40vw);
+    }
+  }
+
+  .dial-eyebrow,
+  .dial-meta {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dusk);
+  }
+
+  .dial-eyebrow {
+    color: var(--blossom);
+  }
+
+  .dial-title {
+    margin: 0.15rem 0 var(--space-2);
+    font-family: var(--font-display);
+    font-size: var(--step-0);
+    font-weight: 560;
+    line-height: var(--leading-tight);
+    color: var(--petal);
+    text-wrap: balance;
+  }
+
+  .dial-open {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    border: var(--hairline) solid var(--stem);
+    border-radius: 2px;
+    padding: 0.3rem 0.6rem;
+    color: var(--blossom);
+    font-family: var(--font-mono);
+    font-size: var(--step--1);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+  }
+
+  .dial-open:hover {
+    background: var(--blossom);
+    border-color: var(--blossom);
+    color: var(--yozakura);
+  }
+
+  .dial-all {
+    display: inline-block;
+    margin-top: var(--space-2);
+    color: var(--dusk);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    border-bottom: var(--hairline) solid transparent;
+  }
+
+  .dial-all:hover {
+    color: var(--blossom);
+    border-bottom-color: var(--blossom);
+  }
+
+  /* --- the ring --- */
+
+  /*
+   * A zero-sized box pinned on the hub centre: every petal is placed by
+   * transform alone, so the ring has no layout of its own to fight with and
+   * `getBoundingClientRect()` on it hands the script the exact centre to
+   * measure a drag against.
+   */
+  .dial-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    rotate: var(--turn, 0deg);
+    transition: rotate 520ms var(--ease-out);
+  }
+
+  /* While a finger or a cursor is turning it, the dial tracks the pointer
+     exactly — an easing curve between the two is lag, not polish. */
+  .dial-ring.is-turning {
+    transition: none;
+  }
+
+  .dial-petal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: var(--pet);
+    height: var(--pet);
+    /* Centre the box on the ring origin, so `rotate` below turns it about the
+       hub rather than about itself. */
+    margin: calc(var(--pet) / -2);
+    /* Out along its own angle, then a quarter turn so the petal points away
+       from the hub instead of across it. */
+    transform: rotate(calc(var(--i) * var(--step))) translateX(var(--r)) rotate(90deg);
+  }
+
+  .dial-link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+    /* The ring owns the gesture; the page must not scroll out from under it. */
+    touch-action: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .dial-petal-svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    fill: var(--stem);
+    transition:
+      fill var(--dur-fade) var(--ease-out),
+      scale var(--dur-fade) var(--ease-out);
+  }
+
+  /* The note you are on, when it is not the one selected — a quiet "you are
+     still here" while you turn past it. */
+  .dial-link[data-current] .dial-petal-svg {
+    fill: var(--dusk);
+  }
+
+  .dial-link:hover .dial-petal-svg,
+  .dial-link:focus-visible .dial-petal-svg {
+    fill: var(--blossom);
+  }
+
+  .dial-link.is-active .dial-petal-svg {
+    fill: var(--blossom);
+    scale: 1.22;
+  }
+
+  .dial-link:focus-visible {
+    outline: 2px solid var(--blossom);
+    outline-offset: 1px;
+    border-radius: 2px;
+  }
+
+  @media (min-width: 60rem) {
+    .dial {
+      --hub: 3.75rem;
+      --pet: 2.1rem;
+      --r: 5.6rem;
+      --edge: 1rem;
+    }
+
+    .dial-card {
+      width: 15rem;
+      right: calc(50% + var(--r) + var(--pet) / 2 + var(--space-3));
+    }
+  }
+
+  /*
+   * Reduced motion keeps the dial and drops the decoration: the hub stops
+   * idling, the ring snaps to the chosen petal instead of sweeping round, and
+   * the panel appears rather than blooming. Nothing here carries meaning that
+   * the motion was the only way to read (§7.8).
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .dial,
+    .dial-hub,
+    .dial-ring,
+    .dial-panel,
+    .dial-petal-svg {
+      animation: none;
+      transition: none;
+    }
+  }
+</style>
+
+<style is:global>
+  /*
+   * Open the flower and the page steps back — the note, the header, the footer,
+   * everything except the dial itself. Picking a note is a moment of choosing
+   * between notes, and the one you happen to be on has no business competing
+   * with the other eleven for attention.
+   *
+   * The dimmed page also stops taking clicks, which is what makes "click
+   * anywhere to dismiss" honest: the first click after opening the dial puts it
+   * away instead of following whatever link happened to be under the cursor.
+   * The clicks still reach <main> and <body>, so the dismiss handler in
+   * src/scripts/dial.ts hears them (and with JS off there is nothing to dismiss
+   * — the flower itself is never dimmed, and closing it is a click on it).
+   */
+  .site-header,
+  .site-footer,
+  main > :not(.dial) {
+    transition: opacity var(--dur-reveal) var(--ease-out);
+  }
+
+  body:has([data-dial][open]) .site-header,
+  body:has([data-dial][open]) .site-footer,
+  body:has([data-dial][open]) main > :not(.dial) {
+    opacity: 0.28;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .site-header,
+    .site-footer,
+    main > :not(.dial) {
+      transition: none;
+    }
+  }
+</style>

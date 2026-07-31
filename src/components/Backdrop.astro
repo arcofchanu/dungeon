@@ -1,0 +1,394 @@
+---
+/*
+ * The live backdrop: a night-garden scene behind the page, with petals falling
+ * across it.
+ *
+ * Fixed, inert, aria-hidden and painted underneath everything — it is weather,
+ * not content. The scene is one SVG laid in like a cover image (bottom-pinned,
+ * so the horizon stays put at any window shape); the petals are a viewport-sized
+ * HTML layer in front of it, so they fall the height of the screen rather than
+ * the height of the drawing.
+ *
+ * The trees are the *same* curves as the tree on the home page — the grove is
+ * the subject, these are the horizon. One tree shape, two jobs.
+ *
+ * CSS-only: every value arrives as an attribute or a custom property from
+ * src/lib/backdrop.ts and the browser owns the timeline, so this costs no
+ * JavaScript and disappears under `prefers-reduced-motion` (§7.8).
+ */
+import { BACKDROP, HILLS, SCENE_TREES, SCENE_VIEW_BOX, SPARKS } from '../lib/backdrop';
+import { BOUGH_DS, TRUNK_D, groveAnchors } from '../lib/grove';
+
+/* Canopies come off the same curves the boughs are drawn from, so a background
+   blossom sits *on* a branch rather than near one. */
+const trees = SCENE_TREES.map((tree) => ({ ...tree, anchors: groveAnchors(tree.blooms) }));
+---
+
+<div class="backdrop" aria-hidden="true">
+  {/* First child, so the ridges and the treeline paint over it. */}
+  <span class="moon"></span>
+
+  <svg class="scene" viewBox={SCENE_VIEW_BOX} preserveAspectRatio="xMidYMax slice">
+    <defs>
+      {/* One petal, five rotations — the glyph the whole site is built from. */}
+      <path
+        id="yz-backdrop-petal"
+        d="M0,-2.4 C-3.4,-4.6 -4.6,-8 -2.8,-10.8 L0,-9 L2.8,-10.8 C4.6,-8 3.4,-4.6 0,-2.4 Z"
+      ></path>
+      <g id="yz-backdrop-bloom">
+        <g transform="rotate(0)"><use href="#yz-backdrop-petal"></use></g>
+        <g transform="rotate(72)"><use href="#yz-backdrop-petal"></use></g>
+        <g transform="rotate(144)"><use href="#yz-backdrop-petal"></use></g>
+        <g transform="rotate(216)"><use href="#yz-backdrop-petal"></use></g>
+        <g transform="rotate(288)"><use href="#yz-backdrop-petal"></use></g>
+      </g>
+    </defs>
+
+    {
+      /*
+       * Trees first, then the ridge they stand on: the hill covers each trunk
+       * where it meets the ground, so a tree reads as growing *behind* the
+       * ridge line instead of balancing on top of it.
+       */
+      HILLS.map((hill, ridge) => (
+        <>
+          {trees
+            .filter((tree) => tree.ridge === ridge)
+            .map((tree) => (
+              <g transform={`translate(${tree.x} ${tree.y}) scale(${tree.scale})`}>
+                <g class="scene-tree" style={`--sway:${tree.sway}s; --tilt:${tree.tilt}deg`}>
+                  {/* The grove's own coordinates, moved so its base is the origin. */}
+                  <g transform="translate(-240 -310)">
+                    <path class="scene-trunk" d={TRUNK_D} />
+                    {BOUGH_DS.map((d) => (
+                      <path class="scene-bough" d={d} />
+                    ))}
+                    {tree.anchors.map((anchor) => (
+                      <use
+                        class="scene-bloom"
+                        href="#yz-backdrop-bloom"
+                        transform={`translate(${anchor.x} ${anchor.y}) rotate(${anchor.rotate}) scale(${anchor.scale})`}
+                      />
+                    ))}
+                  </g>
+                </g>
+              </g>
+            ))}
+
+          <path class="scene-hill" d={hill.d} style={`--depth:${hill.depth}`} />
+        </>
+      ))
+    }
+
+    {
+      SPARKS.map((spark) => (
+        <circle
+          class="scene-spark"
+          cx={spark.x}
+          cy={spark.y}
+          r={spark.r}
+          style={`--rise:${spark.rise}; --dur:${spark.duration}s; --delay:${spark.delay}s; --peak:${spark.opacity}`}
+        />
+      ))
+    }
+  </svg>
+
+  {
+    BACKDROP.map((petal) => (
+      <span
+        class:list={['backdrop-petal', `is-${petal.depth}`]}
+        style={`--x:${petal.x}; --drift:${petal.drift}; --size:${petal.size}px; --dur:${petal.duration}s; --flutter:${petal.flutter}s; --delay:${petal.delay}s; --peak:${petal.opacity}`}
+      >
+        <svg viewBox="-6 -12 12 12" aria-hidden="true" focusable="false">
+          <use href="#yz-backdrop-petal" />
+        </svg>
+      </span>
+    ))
+  }
+</div>
+
+<style>
+  /*
+   * A negative layer, and a direct child of <body> so that it lands in the root
+   * stacking context: it paints over the page's background colour and under
+   * every scrap of content, without any other element having to state a z-index
+   * to stay above it. Raising <main> instead would work too, and would make
+   * <main> a stacking context — which on /notes/ would trap the filter sheet
+   * (fixed, z 40) underneath the header.
+   *
+   * `--veil` is the one knob for the whole backdrop, and the only thing the
+   * open/closed states below touch. Its values live in the global block at the
+   * bottom of this file, because they key off <body> and off other components.
+   */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    /* The fallback matters: `var(--veil)` alone is invalid until the global
+       block below has applied, and an invalid opacity is 1 — one frame of the
+       scene at full strength on a cold load. */
+    opacity: var(--veil, 0.45);
+    transition: opacity var(--dur-reveal) var(--ease-out);
+  }
+
+  .scene {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* --- the sky --- */
+
+  /*
+   * One flat disc and nothing else. A halo ring was the obvious next move and
+   * it reads as a second circle, not as light — and a gradient, which is what
+   * would actually read as light, is the one thing §7.7 rules out. So: a disc,
+   * carried high enough through the veil to still look lit.
+   *
+   * In its own element rather than in the scene, because it is the one shape
+   * that has to keep out of the text's way, and the text moves with the
+   * breakpoints. Small: a moon that fills a corner stops being a moon.
+   */
+  .moon {
+    position: absolute;
+    top: 11vh;
+    right: 8vw;
+    width: 4.5rem;
+    height: 4.5rem;
+    border-radius: 50%;
+    background: var(--petal);
+    opacity: 0.72;
+  }
+
+  /* --- the ground --- */
+
+  /*
+   * Three fills of one colour at three opacities. Distance hazes a silhouette
+   * out rather than darkening it, so the single --branch reads as three planes
+   * without a second token or a gradient.
+   */
+  .scene-hill {
+    fill: var(--branch);
+    opacity: var(--depth);
+  }
+
+  /* --- the treeline --- */
+
+  .scene-trunk,
+  .scene-bough {
+    fill: none;
+    stroke: var(--branch);
+    stroke-linecap: round;
+  }
+
+  .scene-trunk {
+    stroke-width: 5;
+  }
+
+  .scene-bough {
+    stroke-width: 2.2;
+  }
+
+  .scene-bloom {
+    fill: var(--stem);
+    opacity: 0.8;
+  }
+
+  /*
+   * The lean. `fill-box` puts the origin on the tree's own bounding box and
+   * `50% 100%` puts it at the foot of the trunk, so the canopy swings and the
+   * roots stay planted. Each tree has its own period (src/lib/backdrop.ts), so
+   * the horizon never leans in unison — that would read as the page moving.
+   */
+  .scene-tree {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: yz-scene-sway var(--sway) ease-in-out infinite alternate;
+  }
+
+  @keyframes yz-scene-sway {
+    from {
+      rotate: calc(var(--tilt) * -1);
+    }
+    to {
+      rotate: var(--tilt);
+    }
+  }
+
+  .scene-spark {
+    fill: var(--blossom);
+    opacity: 0;
+    animation: yz-scene-spark var(--dur) ease-in-out var(--delay) infinite;
+  }
+
+  @keyframes yz-scene-spark {
+    0% {
+      opacity: 0;
+      translate: 0 0;
+    }
+    35%,
+    70% {
+      opacity: var(--peak);
+    }
+    100% {
+      opacity: 0;
+      translate: 0 calc(var(--rise) * -1px);
+    }
+  }
+
+  /* --- petals on the wind --- */
+
+  /*
+   * Two elements, two periods — the same split the tree's drift uses. The span
+   * carries the fall, the <svg> inside it carries the flutter; one element
+   * cannot hold both without the shorter cycle stamping over the longer one.
+   */
+  .backdrop-petal {
+    position: absolute;
+    top: -14vh;
+    left: calc(var(--x) * 1vw);
+    width: var(--size);
+    height: var(--size);
+    /* Off until the animation places it — no flash at the origin on first paint. */
+    opacity: 0;
+    animation: yz-backdrop-fall var(--dur) linear var(--delay) infinite;
+  }
+
+  .backdrop-petal svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    fill: var(--blossom);
+    animation: yz-backdrop-flutter var(--flutter) ease-in-out var(--delay) infinite;
+  }
+
+  /* Distance desaturates: the far band takes the branch colour, not the accent. */
+  .is-far svg {
+    fill: var(--stem);
+  }
+
+  /*
+   * x rides the wind unevenly — 0.45 → 0.25 → 0.85 → 1 of the total drift — so
+   * a petal slips sideways in gusts instead of tracking a straight diagonal.
+   * y is monotonic and evenly spaced against a linear timing function, so the
+   * fall itself never speeds up or stalls.
+   */
+  @keyframes yz-backdrop-fall {
+    0% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0;
+    }
+    8% {
+      opacity: var(--peak);
+    }
+    25% {
+      transform: translate3d(calc(var(--drift) * 0.45 * 1vw), 32vh, 0);
+    }
+    50% {
+      transform: translate3d(calc(var(--drift) * 0.25 * 1vw), 64vh, 0);
+    }
+    75% {
+      transform: translate3d(calc(var(--drift) * 0.85 * 1vw), 96vh, 0);
+    }
+    92% {
+      opacity: var(--peak);
+    }
+    100% {
+      transform: translate3d(calc(var(--drift) * 1vw), 128vh, 0);
+      opacity: 0;
+    }
+  }
+
+  @keyframes yz-backdrop-flutter {
+    0%,
+    100% {
+      transform: rotate(-42deg);
+    }
+    50% {
+      transform: rotate(52deg);
+    }
+  }
+
+  /*
+   * The scene is worth keeping still — it is a drawing, and a drawing is not
+   * motion. What goes is everything that moves: the sway, the sparks, and the
+   * petals, which have nowhere to be but mid-air and would read as a rendering
+   * bug frozen there.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    .scene-tree,
+    .scene-spark {
+      animation: none;
+    }
+
+    .scene-spark {
+      opacity: var(--peak);
+    }
+
+    .backdrop-petal {
+      display: none;
+    }
+  }
+</style>
+
+<style is:global>
+  /*
+   * The veil, and the states that change it. These live in a global block
+   * because every one of them keys off an element this component does not own —
+   * <body>, the blossom preview on the home page, the petal dial on a note.
+   *
+   * Home is the page the backdrop is *for*, so it gets the strongest reading.
+   * Everywhere else it sits behind prose and drops back accordingly.
+   */
+  .backdrop {
+    --veil: 0.45;
+  }
+
+  body.home .backdrop {
+    --veil: 0.7;
+  }
+
+  /*
+   * Light mode is a second theme, not an inversion (§7.2) — and --petal is the
+   * *text* colour there, so a moon painted with it comes out as a hole punched
+   * in a pale sky. The disc moves to --stem, which is a soft pink on paper and
+   * reads as a blossom moon rather than a hole.
+   */
+  :root[data-theme='light'] .moon {
+    background: var(--stem);
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) .moon {
+      background: var(--stem);
+    }
+  }
+
+  /*
+   * Wide home page only: the intro sits left and the tree sits right, and the
+   * gap between them is the one place on the site with room for a moon. Every
+   * other page keeps it in the top corner, clear of the prose.
+   */
+  @media (min-width: 60rem) {
+    body.home .moon {
+      top: 13vh;
+      right: auto;
+      left: 40vw;
+      width: 6rem;
+      height: 6rem;
+    }
+  }
+
+  /*
+   * Anything opening over the page takes the backdrop down with it: the reader
+   * has asked to look at one thing, and the weather is not it.
+   */
+  body:has([data-dial][open]) .backdrop,
+  body:has([data-grove-pop]:not([hidden])) .backdrop,
+  body:has([data-search]:not([hidden])) .backdrop {
+    --veil: 0.22;
+  }
+</style>

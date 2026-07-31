@@ -163,6 +163,32 @@ pre[data-fence-redacted]:not(.is-revealed):not(.is-fading) + .code-copy {
   display: none;
 }
 
+/*
+ * --- Syntax colours (§7.6) ---
+ *
+ * Shiki emits both themes as custom properties on every token (see
+ * astro.config.mjs) and leaves the choice to CSS, which is the only way a
+ * build-time highlighter can follow a runtime theme toggle. Dark is the
+ * default; light mode is claimed by the stamped attribute, and by the system
+ * preference when nothing is stamped — the same two conditions tokens.css uses.
+ */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-dark);
+}
+
+:root[data-theme='light'] .astro-code,
+:root[data-theme='light'] .astro-code span {
+  color: var(--shiki-light);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) .astro-code,
+  :root:not([data-theme='dark']) .astro-code span {
+    color: var(--shiki-light);
+  }
+}
+
 /* --- Wikilinks (§6) --- */
 .wikilink {
   text-decoration-style: dotted;
