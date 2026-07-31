@@ -15,6 +15,50 @@ html {
   scroll-behavior: smooth;
 }
 
+/*
+ * Scrollbars in the palette (§7.2). Every pane on the site is a dark plum or a
+ * pale petal ground, and the platform's own grey bar sitting in it is the one
+ * piece of chrome the theme cannot otherwise reach.
+ *
+ * The standard properties come first and are what modern browsers use; the
+ * ::-webkit- rules below are for Safari, which still has no support for them.
+ * `background-clip: content-box` behind a transparent border is what gives the
+ * thumb its inset — a scrollbar that touches both edges of its track reads as
+ * a rule down the side of the page.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--branch) transparent;
+}
+
+*:hover {
+  scrollbar-color: var(--stem) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--branch);
+  background-clip: content-box;
+  border: 3px solid transparent;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--stem);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -328,6 +372,45 @@ body.home .site-footer {
   flex: 0 0 auto;
   margin-top: 0;
   padding: var(--space-2) 0 calc(var(--space-2) + env(safe-area-inset-bottom));
+}
+
+/*
+ * The archive is one fixed screen too, but only where there is room for it.
+ *
+ * On desktop the head (home link, title, search) is pinned and the two columns
+ * below it scroll on their own, so the shell must not scroll: the page is
+ * exactly one viewport tall and the grid takes whatever the head leaves.
+ * On a phone the filter rail is a sheet rather than a column, there is no
+ * second pane to scroll independently of, and a fixed shell would only cost
+ * the list its height — so mobile keeps ordinary document scrolling.
+ */
+@media (min-width: 60rem) {
+  html:has(body.archive) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body.archive {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body.archive main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  body.archive .site-footer {
+    flex: 0 0 auto;
+    margin-top: 0;
+    padding: var(--space-2) 0;
+  }
 }
 
 .wrap {

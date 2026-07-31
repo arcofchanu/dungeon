@@ -25,8 +25,11 @@ const trees = SCENE_TREES.map((tree) => ({ ...tree, anchors: groveAnchors(tree.b
 ---
 
 <div class="backdrop" aria-hidden="true">
-  {/* First child, so the ridges and the treeline paint over it. */}
-  <span class="moon"></span>
+  {/*
+    First child, so the ridges and the treeline paint over it. The inner span is
+    the light it casts — see the note in the styles below.
+  */}
+  <span class="moon"><span class="moon-beam"></span></span>
 
   <svg class="scene" viewBox={SCENE_VIEW_BOX} preserveAspectRatio="xMidYMax slice">
     <defs>
@@ -143,14 +146,9 @@ const trees = SCENE_TREES.map((tree) => ({ ...tree, anchors: groveAnchors(tree.b
   /* --- the sky --- */
 
   /*
-   * One flat disc and nothing else. A halo ring was the obvious next move and
-   * it reads as a second circle, not as light — and a gradient, which is what
-   * would actually read as light, is the one thing §7.7 rules out. So: a disc,
-   * carried high enough through the veil to still look lit.
-   *
-   * In its own element rather than in the scene, because it is the one shape
-   * that has to keep out of the text's way, and the text moves with the
-   * breakpoints. Small: a moon that fills a corner stops being a moon.
+   * A flat disc, in its own element rather than in the scene, because it is the
+   * one shape that has to keep out of the text's way and the text moves with
+   * the breakpoints. Small: a moon that fills a corner stops being a moon.
    */
   .moon {
     position: absolute;
@@ -161,6 +159,60 @@ const trees = SCENE_TREES.map((tree) => ({ ...tree, anchors: groveAnchors(tree.b
     border-radius: 50%;
     background: var(--petal);
     opacity: 0.72;
+  }
+
+  /*
+   * The moonlight, hung off the moon's own box so it follows the disc to
+   * wherever the breakpoints put it.
+   *
+   * No shape at all — that was the mistake in the first two attempts. A cone
+   * with soft edges is still a cone, and the eye finds the outline however much
+   * blur is thrown at it. Real moonlight has no boundary: it is bright at the
+   * moon and simply runs out. So this is one radial falloff, taller than it is
+   * wide and sitting a little high in its own box so more of the light spills
+   * below the disc than above it, and a blur on top to take the last of the
+   * banding out of the ramp.
+   *
+   * This is the one gradient and the one blur in the build, and §7.7 forbids
+   * both. That rule exists to stop flat colour drifting into decoration — but
+   * light *is* a falloff, and a hard-edged shape of it would be exactly the
+   * kitsch the rule is protecting against. Deliberate, and the only exception
+   * in the stylesheet.
+   *
+   * Live: it breathes — the bloom swells and fades over 20s, against the
+   * petals' own periods so the sky never pulses on the beat.
+   */
+  .moon-beam {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 720%;
+    height: 860%;
+    /* Centred on the disc horizontally; hung so the moon sits at 30% of its
+       height, which is what tips the spill downward without drawing a shaft. */
+    translate: -50% -30%;
+    background: radial-gradient(
+      ellipse 32% 40% at 50% 30%,
+      color-mix(in srgb, var(--petal) 22%, transparent),
+      color-mix(in srgb, var(--petal) 11%, transparent) 26%,
+      color-mix(in srgb, var(--petal) 4%, transparent) 48%,
+      color-mix(in srgb, var(--petal) 1%, transparent) 68%,
+      transparent 88%
+    );
+    filter: blur(30px);
+    will-change: opacity, scale;
+    animation: yz-moon-beam 20s ease-in-out infinite alternate;
+  }
+
+  @keyframes yz-moon-beam {
+    from {
+      opacity: 0.55;
+      scale: 0.94;
+    }
+    to {
+      opacity: 1;
+      scale: 1.08;
+    }
   }
 
   /* --- the ground --- */
@@ -320,7 +372,8 @@ const trees = SCENE_TREES.map((tree) => ({ ...tree, anchors: groveAnchors(tree.b
    */
   @media (prefers-reduced-motion: reduce) {
     .scene-tree,
-    .scene-spark {
+    .scene-spark,
+    .moon-beam {
       animation: none;
     }
 
@@ -361,9 +414,31 @@ const trees = SCENE_TREES.map((tree) => ({ ...tree, anchors: groveAnchors(tree.b
     background: var(--stem);
   }
 
+  /* The beam follows the disc: --petal is the *text* colour on paper, and a
+     beam painted with it would be a shaft of shadow. */
+  :root[data-theme='light'] .moon-beam {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--stem) 26%, transparent),
+      color-mix(in srgb, var(--stem) 12%, transparent) 34%,
+      color-mix(in srgb, var(--stem) 4%, transparent) 62%,
+      transparent 88%
+    );
+  }
+
   @media (prefers-color-scheme: light) {
     :root:not([data-theme='dark']) .moon {
       background: var(--stem);
+    }
+
+    :root:not([data-theme='dark']) .moon-beam {
+      background: linear-gradient(
+        to bottom,
+        color-mix(in srgb, var(--stem) 26%, transparent),
+        color-mix(in srgb, var(--stem) 12%, transparent) 34%,
+        color-mix(in srgb, var(--stem) 4%, transparent) 62%,
+        transparent 88%
+      );
     }
   }
 

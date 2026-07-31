@@ -181,15 +181,21 @@ const { groups, total } = Astro.props;
 
   /* Desktop: persistent column, no overlay, no close button. */
   @media (min-width: 60rem) {
+    /*
+     * Its own scroll pane, the full height of the row. `contain` keeps a
+     * flick at the end of the tag list from carrying on into the note list
+     * behind it — the two columns scroll independently, and the pointer
+     * decides which one is being scrolled.
+     */
     .rail {
-      position: sticky;
-      top: 4rem;
+      position: static;
       inset: auto;
       display: block;
       background: none;
-      align-self: start;
-      max-height: calc(100dvh - 5rem);
+      min-height: 0;
+      height: 100%;
       overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .rail-panel {

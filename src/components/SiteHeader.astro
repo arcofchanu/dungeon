@@ -46,16 +46,24 @@
 
 <style>
   /*
-   * Sticky and transparent: the lantern stays in the corner while the page
-   * moves under it, which is the whole premise of the scroll nudge in
+   * Fixed and transparent: the lantern stays in the corner while the page moves
+   * under it, which is the whole premise of the scroll nudge in
    * src/scripts/lantern.ts. Nothing here paints, so there is no bar — text
    * passes behind the lantern rather than under a band of --yozakura.
+   *
+   * Fixed rather than sticky, so it takes *no* layout space. Sticky, it still
+   * held a header's worth of height open at the top of every page — an empty
+   * band under an element that no longer draws anything, which every page then
+   * had to start below. `pointer-events: none` is what keeps this invisible
+   * full-width box from eating clicks along the top of the page; the lantern
+   * inside it takes them back.
    */
   .site-header {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 20;
-    /* The lantern hangs past the bottom of this box and must not be cut. */
     pointer-events: none;
   }
 

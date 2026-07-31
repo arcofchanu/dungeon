@@ -13,7 +13,7 @@ const description =
 const noteWord = notes.length === 1 ? 'note' : 'notes';
 ---
 
-<BaseLayout title="All notes" description={description} path="/notes/">
+<BaseLayout title="All notes" description={description} path="/notes/" bodyClass="archive">
   <div class="wrap archive-head">
     <a class="archive-back mono" href="/"><span aria-hidden="true">←</span> Home</a>
 
@@ -83,8 +83,10 @@ const noteWord = notes.length === 1 ? 'note' : 'notes';
 </BaseLayout>
 
 <style>
+  /* The header bar is gone, so the page no longer has to clear one — this is
+     just the air above the title now, not a gap under something. */
   .archive-head {
-    padding-block: var(--space-5) var(--space-4);
+    padding-block: var(--space-2) var(--space-3);
   }
 
   .archive-back {
@@ -232,8 +234,19 @@ const noteWord = notes.length === 1 ? 'note' : 'notes';
   }
 
   @media (min-width: 60rem) {
+    /*
+     * Desktop turns the archive into three fixed bands: the head, which never
+     * moves, and two columns underneath that scroll on their own. Whichever one
+     * the pointer is over is the one that moves — `overscroll-behavior` is what
+     * stops a pane that has hit its end from handing the scroll on to the page
+     * behind it, which is the thing that makes two panes feel like two panes.
+     *
+     * The shell is `body.archive` in global.css: one screen tall, no document
+     * scroll. Here the head takes what it needs and the grid takes the rest.
+     */
     .archive-head {
-      padding-block: var(--space-6) var(--space-4);
+      flex: 0 0 auto;
+      padding-block: var(--space-3) var(--space-3);
     }
 
     .archive-title {
@@ -244,17 +257,31 @@ const noteWord = notes.length === 1 ? 'note' : 'notes';
       display: grid;
       grid-template-columns: var(--rail-width) minmax(0, 1fr);
       gap: var(--space-5);
-      align-items: start;
-      padding-bottom: var(--space-6);
+      flex: 1 1 auto;
+      /* Without this the grid takes its content's height and the panes never
+         become scrollable at all. */
+      min-height: 0;
+      padding-bottom: 0;
+    }
+
+    .index-main {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      /* Clear of the scrollbar, so a card's right edge is not under it. */
+      padding-right: var(--space-2);
+      padding-bottom: var(--space-5);
+    }
+
+    /* The list's own bar rides with it rather than pinning: it is two words and
+       a count, and pinning it would be a third fixed band on the screen. */
+    .index-bar {
+      justify-content: flex-end;
     }
 
     /* The rail is the filter UI on desktop; the trigger is mobile-only. */
     .filter-trigger {
       display: none;
-    }
-
-    .index-bar {
-      justify-content: flex-end;
     }
   }
 </style>

@@ -74,7 +74,7 @@ const last = Math.max(nodes.length - 1, 1);
    * that works without it.
    */
   /*
-   * Mobile: a horizontal strip pinned directly under the sticky header.
+   * Mobile: a horizontal strip along the very top of the screen.
    *
    * It used to be a fixed vertical rail at the left edge, which sat *on top of*
    * the prose — the wrap's 1rem inline padding is narrower than the rail, so
@@ -83,27 +83,25 @@ const last = Math.max(nodes.length - 1, 1);
    * its own band, the text owns the full width, and nothing overlaps. The
    * `--progress` / `--pos` custom properties are percentages, so motion.ts
    * drives both orientations without knowing which one is on screen.
+   *
+   * `top: 0`, not `top: var(--header-h)`: there is no header bar any more, so
+   * the strip moves up into the space it left. That is what makes the band work
+   * without reading as chrome — it is flush with the top edge of the screen
+   * rather than a bar floating below one, with scrolled prose showing above it.
+   *
+   * The band is opaque and has no rule under it. Opaque is what keeps the prose
+   * *behind* the rail instead of running through it; the hairline underneath is
+   * what made it look like a divider, and that is the part that is gone.
    */
   .branch {
     position: fixed;
-    top: var(--header-h);
+    top: 0;
     left: 0;
     right: 0;
     height: var(--branch-strip);
     z-index: 10;
     pointer-events: none;
-    /*
-     * No band and no rule. The strip used to be an opaque --yozakura bar with a
-     * hairline under it, which was a second horizontal line across the top of
-     * every note — and with the live backdrop behind the page, the bar's own
-     * bottom edge read as a third. What is left is the rail itself: two pixels
-     * and a blossom, floating over the page.
-     *
-     * It still owns its band in the layout — `.note-wrap` reserves
-     * --branch-strip at the top — so nothing overlaps at rest. Scrolled, the
-     * prose passes behind a hairline at the top of the screen, which is what
-     * every reading-progress rail on the web does.
-     */
+    background: var(--yozakura);
   }
 
   .branch-defs {
@@ -112,17 +110,8 @@ const last = Math.max(nodes.length - 1, 1);
     height: 0;
   }
 
-  /*
-   * Hidden on mobile. The horizontal rule across the top of every note was the
-   * last line up there, and it read as chrome separating a header that no
-   * longer exists. The blossom is left to do the whole job on its own: where it
-   * sits across the strip *is* the progress, and which section it belongs to is
-   * the position. The line comes back on desktop, where it stands up vertically
-   * in its own column and separates nothing.
-   */
   .branch-line,
   .branch-fill {
-    display: none;
     position: absolute;
     left: 0;
     top: 50%;
@@ -237,13 +226,12 @@ const last = Math.max(nodes.length - 1, 1);
       height: calc(100dvh - 9rem);
       width: 26px;
       align-self: start;
+      /* Standing up, the rail needs no band behind it — it has its own column. */
       background: none;
-      border-bottom: none;
     }
 
     .branch-line,
     .branch-fill {
-      display: block;
       left: 50%;
       top: 0;
       translate: -50% 0;
