@@ -3,13 +3,12 @@ import { defineConfig } from 'astro/config';
 import { satteri } from '@astrojs/markdown-satteri';
 import mdx from '@astrojs/mdx';
 
-import { yozakuraTheme } from './src/lib/markdown/theme.mjs';
+import { yozakuraLightTheme, yozakuraTheme } from './src/lib/markdown/theme.mjs';
 import { yozakuraTextPlugin, yozakuraFenceTransformer } from './src/lib/markdown/plugins.mjs';
 
 // https://astro.build/config
 export default defineConfig({
   site: process.env.SITE_URL ?? 'https://yozakura.pages.dev',
-  base: process.env.BASE_PATH || '/',
   integrations: [mdx()],
   build: {
     // Pagefind indexes `dist/`; directory-style output keeps note URLs stable.
@@ -20,7 +19,14 @@ export default defineConfig({
       hastPlugins: [yozakuraTextPlugin()],
     }),
     shikiConfig: {
-      theme: yozakuraTheme,
+      /*
+       * Both themes, and no default colour: Shiki then writes --shiki-light and
+       * --shiki-dark onto every token instead of a hard `color`, and content.css
+       * chooses between them. Without this the block keeps its dark-mode inks on
+       * light mode's pale --bark and the code is unreadable (§7.6).
+       */
+      themes: { dark: yozakuraTheme, light: yozakuraLightTheme },
+      defaultColor: false,
       wrap: false,
       transformers: [yozakuraFenceTransformer],
     },
