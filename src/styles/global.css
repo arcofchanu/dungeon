@@ -425,3 +425,16 @@ body.home .site-footer {
     padding-inline: var(--space-4);
   }
 }
+
+/* The archive is a grid of cards rather than a column of prose, so it wants the
+   width more than it wants the margin: a quarter of the usual gutter at both
+   sizes, which is about as tight as it goes before the cards touch the edge. */
+body.archive .wrap {
+  padding-inline: 0.25rem;
+}
+
+@media (min-width: 40rem) {
+  body.archive .wrap {
+    padding-inline: var(--space-1);
+  }
+}
